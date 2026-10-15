@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Talent Institute & Computer Education
 
-## Getting Started
+Production-oriented institute website built with Next.js App Router, MongoDB, and Tailwind CSS v4.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20+ (for `node --env-file`)
+- MongoDB database
+- Cloudinary account (student photos & certificate files)
+
+## Setup
+
+1. Copy environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Fill in `.env.local`:
+
+| Variable | Purpose |
+|----------|---------|
+| `MONGODB_URI` | MongoDB connection string |
+| `SESSION_SECRET` | At least 32 random characters (server-only) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | One-time bootstrap credentials |
+| `CLOUDINARY_*` | Server-side upload credentials |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL for SEO metadata |
+| `UPSTASH_REDIS_*` | Optional; recommended for rate limits in production |
+
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Create the administrator (runs once; refuses if an admin already exists):
+
+```bash
+npm run create-admin
+```
+
+5. Start development:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Admin login: `/admin/login`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## MongoDB
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or a self-hosted instance. Whitelist your IP and create a database user with read/write access. Set `MONGODB_URI` to the connection string.
 
-## Learn More
+## Cloudinary
 
-To learn more about Next.js, take a look at the following resources:
+1. Create a Cloudinary cloud.
+2. Copy cloud name, API key, and API secret into `.env.local`.
+3. Uploads use signed server-side streams only; credentials are never exposed to the browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If Cloudinary is missing, photo and certificate uploads fail with a clear error; other features still work.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Rate limiting
 
-## Deploy on Vercel
+Public search, login, and enquiry endpoints are rate limited. For a single server, an in-memory fallback is used. For production with multiple instances, configure [Upstash Redis](https://upstash.com/) REST credentials.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Student deletion strategy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- If a student has **issued certificates** or **published results**, delete requests **archive** the student (`archived: true`) instead of hard deletion.
+- Otherwise draft-linked records are removed and the student document is deleted.
+
+## Editable content
+
+- Contact details: `src/lib/site-config.js`
+- Courses: `src/data/courses.js`
+- About faculty & official documents: `src/app/about/page.js`
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
+| `npm run create-admin` | Bootstrap admin user |
+
+## Security checklist (deployment)
+
+- [ ] Set strong `SESSION_SECRET` and rotate if compromised
+- [ ] Use HTTPS in production (secure cookies)
+- [ ] Configure Upstash (or equivalent) rate limiting
+- [ ] Restrict MongoDB network access
+- [ ] Keep Cloudinary secrets server-side only
+- [ ] Do not commit `.env.local`
+- [ ] Verify admin routes return 401 without session (not only UI hiding)
