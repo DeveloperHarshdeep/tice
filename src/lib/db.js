@@ -1,24 +1,29 @@
 import mongoose from "mongoose";
 
-let cached = global.mongoose;
+const globalCache = globalThis;
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+if (!globalCache.mongoose) {
+  globalCache.mongoose = {
+    conn: null,
+    promise: null,
+    uri: null,
+  };
 }
 
+const cached = globalCache.mongoose;
+
 export function getCleanMongoUri() {
-  let uri = process.env.MONGODB_URI?.trim();
+  const uri = process.env.MONGODB_URI?.trim();
+
   if (!uri) {
-    throw new Error(
-      "MONGODB_URI is not configured. Add it to your environment variables (e.g., mongodb://127.0.0.1:27017/talent-institute).",
-    );
+    throw new Error("MONGODB_URI is missing from environment variables.");
   }
 
-  // Gracefully correct accidental http/https prefixes in environment configurations
-  if (uri.startsWith("http://")) {
-    uri = uri.replace(/^http:\/\//, "mongodb://");
-  } else if (uri.startsWith("https://")) {
-    uri = uri.replace(/^https:\/\//, "mongodb+srv://");
+  if (
+    !uri.startsWith("mongodb://") &&
+    !uri.startsWith("mongodb+srv://")
+  ) {
+    throw new Error("Invalid MongoDB connection string format.");
   }
 
   return uri;
@@ -31,26 +36,51 @@ export function assertMongoConfigured() {
 export async function connectDB() {
   const uri = getCleanMongoUri();
 
+  // Reconnect if the configured URI has changed
+  if (cached.uri && cached.uri !== uri) {
+    await mongoose.disconnect();
+
+    cached.conn = null;
+    cached.promise = null;
+    cached.uri = null;
+  }
+
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
   if (!cached.promise) {
+    cached.uri = uri;
+
     cached.promise = mongoose
       .connect(uri, {
         bufferCommands: false,
       })
-      .then((mongooseInstance) => {
-        return mongooseInstance;
+      .then((instance) => {
+        console.log(
+          "[MongoDB] Connected host:",
+          instance.connection.host
+        );
+
+        console.log(
+          "[MongoDB] Database:",
+          instance.connection.name
+        );
+
+        return instance;
+      })
+      .catch((error) => {
+        cached.promise = null;
+        cached.uri = null;
+        throw error;
       });
   }
 
   try {
     cached.conn = await cached.promise;
+    return cached.conn;
   } catch (error) {
-    cached.promise = null;
+    cached.conn = null;
     throw error;
   }
-
-  return cached.conn;
 }

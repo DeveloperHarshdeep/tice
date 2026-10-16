@@ -51,17 +51,6 @@ export function CertificatesAdminPanel() {
       setItems(certs.items || []);
       const loadedStuds = studs.items || [];
       setStudents(loadedStuds);
-      if (loadedStuds.length > 0) {
-        setForm((f) => {
-          if (f.studentId) return f;
-          const first = loadedStuds[0];
-          return {
-            ...f,
-            studentId: first._id || first.id || "",
-            courseName: first.courseTitle || first.courseName || first.courseId || "",
-          };
-        });
-      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -138,17 +127,21 @@ export function CertificatesAdminPanel() {
         });
       }
 
-      setEditingId(null);
-      setFile(null);
-      setConfirmReissue(false);
-      setForm({
-        studentId: students[0]?._id || students[0]?.id || "",
-        certificateNumber: "",
-        courseName: students[0]?.courseTitle || students[0]?.courseName || "",
-        issueDate: new Date().toISOString().slice(0, 10),
-        status: "issued",
-      });
-      await load();
+     
+setEditingId(null);
+setFile(null);
+setConfirmReissue(false);
+
+setForm({
+  studentId: "",
+  certificateNumber: "",
+  courseName: "",
+  issueDate: new Date().toISOString().slice(0, 10),
+  status: "issued",
+});
+
+await load();
+
     } catch (err) {
       setError(err.message);
     } finally {

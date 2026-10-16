@@ -33,15 +33,15 @@ export function ResultsAdminPanel() {
   const [success, setSuccess] = useState(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [file, setFile] = useState(null);
-  const [form, setForm] = useState({
-    studentId: "",
-    examName: "Final Practical Examination",
-    resultDate: new Date().toISOString().slice(0, 10),
-    marksObtained: "85",
-    maxMarks: "100",
-    publicationStatus: "published",
-    showPhotoPublicly: false,
-  });
+const [form, setForm] = useState({
+  studentId: "",
+  examName: "Final Practical Examination",
+  resultDate: new Date().toISOString().slice(0, 10),
+  marksObtained: "",
+  maxMarks: "100",
+  publicationStatus: "published",
+  showPhotoPublicly: false,
+});
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -56,9 +56,7 @@ export function ResultsAdminPanel() {
       setItems(results.items || []);
       const loadedStuds = studs.items || [];
       setStudents(loadedStuds);
-      if (loadedStuds.length > 0) {
-        setForm((f) => (f.studentId ? f : { ...f, studentId: loadedStuds[0]._id || loadedStuds[0].id || "" }));
-      }
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,11 +85,14 @@ export function ResultsAdminPanel() {
   }
 
   // Live calculation of preview percentage
-  const calculatedPercentage =
-    form.marksObtained && form.maxMarks && Number(form.maxMarks) > 0
-      ? Math.round((Number(form.marksObtained) / Number(form.maxMarks)) * 100)
-      : null;
-
+const calculatedPercentage =
+  form.marksObtained.trim() !== "" &&
+  form.maxMarks.trim() !== "" &&
+  Number(form.maxMarks) > 0
+    ? Math.round(
+        (Number(form.marksObtained) / Number(form.maxMarks)) * 100
+      )
+    : null;
   async function save(e) {
     e.preventDefault();
     setSaving(true);
@@ -139,19 +140,23 @@ export function ResultsAdminPanel() {
         });
       }
 
-      setEditingId(null);
-      setFile(null);
-      setConfirmReplace(false);
-      setForm({
-        studentId: students[0]?._id || students[0]?.id || "",
-        examName: "Final Practical Examination",
-        resultDate: new Date().toISOString().slice(0, 10),
-        marksObtained: "85",
-        maxMarks: "100",
-        publicationStatus: "published",
-        showPhotoPublicly: false,
-      });
-      await load();
+
+setEditingId(null);
+setFile(null);
+setConfirmReplace(false);
+
+setForm({
+  studentId: "",
+  examName: "Final Practical Examination",
+  resultDate: new Date().toISOString().slice(0, 10),
+  marksObtained: "",
+  maxMarks: "100",
+  publicationStatus: "published",
+  showPhotoPublicly: false,
+});
+
+await load();
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -176,20 +181,22 @@ export function ResultsAdminPanel() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function cancelEdit() {
-    setEditingId(null);
-    setFile(null);
-    setConfirmReplace(false);
-    setForm({
-      studentId: students[0]?._id || students[0]?.id || "",
-      examName: "Final Practical Examination",
-      resultDate: new Date().toISOString().slice(0, 10),
-      marksObtained: "85",
-      maxMarks: "100",
-      publicationStatus: "published",
-      showPhotoPublicly: false,
-    });
-  }
+
+function cancelEdit() {
+  setEditingId(null);
+  setFile(null);
+  setConfirmReplace(false);
+
+  setForm({
+    studentId: "",
+    examName: "Final Practical Examination",
+    resultDate: new Date().toISOString().slice(0, 10),
+    marksObtained: "",
+    maxMarks: "100",
+    publicationStatus: "published",
+    showPhotoPublicly: false,
+  });
+}
 
   async function removeRow(id) {
     if (!confirm("Delete this draft result?")) return;
@@ -368,7 +375,7 @@ export function ResultsAdminPanel() {
             </div>
           ) : null}
 
-          <div className="sm:col-span-2">
+          {/* <div className="sm:col-span-2">
             <label className="block text-sm font-semibold text-foreground">
               Result Document / Marksheet File (PDF or Image)
             </label>
@@ -381,7 +388,7 @@ export function ResultsAdminPanel() {
             <p className="mt-1 text-[11px] text-slate-500">
               Upload scanned mark sheet or certificate PDF to Cloudinary under talent-institute/results.
             </p>
-          </div>
+          </div> */}
 
           <div className="flex items-center gap-3 pt-2 sm:col-span-2">
             <Button

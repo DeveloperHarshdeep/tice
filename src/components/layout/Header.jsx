@@ -113,11 +113,15 @@ export function Header() {
           href="/"
           className="flex items-center gap-3 font-semibold text-foreground group"
         >
-          <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0284c7] via-[#38bdf8] to-[#67e8f9] text-white shadow-xs shadow-sky-500/20 transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5" aria-hidden />
-          </span>
+          <span className="flex h-30 w-30 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+  <img
+    src="/tice_logo.png"
+    alt="TICE Logo"
+    className="h-full w-full object-contain"
+  />
+</span>
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
+            {/* <div className="flex items-center gap-1.5">
               <span className="text-lg font-black tracking-tight text-slate-900 group-hover:text-brand transition-colors">
                 TICE
               </span>
@@ -127,7 +131,7 @@ export function Header() {
             </div>
             <span className="text-[11px] font-medium tracking-wide text-slate-500 hidden sm:inline">
               Talent Institute & Computer Education
-            </span>
+            </span> */}
           </div>
         </Link>
 

@@ -72,40 +72,58 @@ export function ResultSearchForm() {
 
   return (
     <div className="space-y-6">
-      {/* Search Input Box */}
-      <div className="rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <Input
-                label="Student Roll Number"
-                name="rollNumber"
-                value={rollNumber}
-                onChange={(e) => setRollNumber(e.target.value)}
-                placeholder="e.g. TICE/2026/001"
-                autoComplete="off"
-                helperText="Enter the roll number exactly as printed on your admit card or fee receipt."
-              />
-            </div>
-            <Button
-              type="submit"
-              size="md"
-              variant="primary"
-              disabled={state.type === "loading"}
-              className="shrink-0"
-            >
-              {state.type === "loading" ? (
-                <Spinner label="Searching…" size="sm" />
-              ) : (
-                <>
-                  <Search className="h-4 w-4" aria-hidden />
-                  Search Result
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+
+{/* Search Input Box */}
+<div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm sm:p-7">
+  <form onSubmit={onSubmit} noValidate>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center">
+      <div className="min-w-0">
+        <Input
+          label="Student Roll Number"
+          name="rollNumber"
+          value={rollNumber}
+          onChange={(e) => setRollNumber(e.target.value.toUpperCase())}
+          placeholder="e.g. TICE/2026/001"
+          autoComplete="off"
+          required
+          className="border-slate-200 text-base transition-colors focus:border-sky-500 focus:ring-sky-500"
+          helperText="Enter the roll number exactly as printed on your admit card or fee receipt."
+        />
       </div>
+
+      <div className="flex items-center">
+        <Button
+          type="submit"
+          size="md"
+          variant="primary"
+          disabled={state.type === "loading"}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 font-semibold text-white shadow-sm transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {state.type === "loading" ? (
+            <Spinner label="Searching…" size="sm" />
+          ) : (
+            <>
+              <Search className="h-4 w-4" aria-hidden="true" />
+              Search Result
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+
+    <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-sky-100 bg-sky-50/70 p-3">
+      <ShieldCheck
+        className="mt-0.5 h-4 w-4 shrink-0 text-sky-600"
+        aria-hidden="true"
+      />
+      <p className="text-xs leading-5 text-slate-600">
+        Enter your correct roll number to retrieve the published examination
+        result. Your result will appear below after verification.
+      </p>
+    </div>
+  </form>
+</div>
+
 
       {/* Dynamic Loading State */}
       {state.type === "loading" ? (
