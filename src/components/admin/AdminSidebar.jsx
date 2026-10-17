@@ -9,7 +9,6 @@ import {
   Award,
   ClipboardList,
   LogOut,
-  GraduationCap,
   ExternalLink,
   Menu,
   X,
@@ -23,6 +22,23 @@ const links = [
   { href: "/admin/dashboard/certificates", label: "Certificates", icon: Award },
   { href: "/admin/dashboard/results", label: "Results", icon: ClipboardList },
 ];
+
+function TiceLogo({ size = "md" }) {
+  const sizeClasses =
+    size === "lg" ? "h-12 w-12 sm:h-14 sm:w-14" : "h-9 w-9";
+
+  return (
+    <span
+      className={`flex ${sizeClasses} shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white`}
+    >
+      <img
+        src="/tice_logo.png"
+        alt="Talent Institute & Computer Education logo"
+        className="block h-full w-full object-contain"
+      />
+    </span>
+  );
+}
 
 export function AdminSidebar({ sessionUser }) {
   const pathname = usePathname();
@@ -41,83 +57,110 @@ export function AdminSidebar({ sessionUser }) {
 
   return (
     <>
-      {/* Mobile Header Bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-4 md:hidden">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
-            <GraduationCap className="h-4 w-4" aria-hidden />
-          </span>
-          <span className="font-bold text-slate-900 text-sm">
+      {/* Mobile Header */}
+      <header className="flex h-16 items-center justify-between border-b border-border bg-white px-4 sm:px-5 md:hidden">
+        <Link
+          href="/admin/dashboard"
+          className="flex min-w-0 items-center gap-2.5"
+          aria-label="TICE Admin Dashboard"
+        >
+          <TiceLogo />
+          <span className="truncate text-sm font-bold text-slate-900">
             TICE Admin
           </span>
-        </div>
+        </Link>
+
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="rounded-lg border border-border p-2 text-slate-700"
-          aria-label="Toggle admin menu"
+          className="ml-3 shrink-0 rounded-lg border border-border p-2 text-slate-700 transition-colors hover:bg-slate-50"
+          aria-label={mobileOpen ? "Close admin menu" : "Open admin menu"}
+          aria-expanded={mobileOpen}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? (
+            <X className="h-5 w-5" aria-hidden />
+          ) : (
+            <Menu className="h-5 w-5" aria-hidden />
+          )}
         </button>
-      </div>
+      </header>
 
-      {/* Sidebar (Desktop always, Mobile conditional) */}
+      {/* Responsive Sidebar */}
       <aside
         className={`${
           mobileOpen ? "block" : "hidden"
-        } md:block md:w-64 md:shrink-0 md:min-h-screen border-b md:border-b-0 md:border-r border-border bg-white`}
+        } w-full border-b border-border bg-white md:block md:min-h-screen md:w-64 md:shrink-0 md:border-b-0 md:border-r`}
       >
-        <div className="p-5 border-b border-slate-100 hidden md:block">
-          <Link href="/admin/dashboard" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-sky via-brand to-brand-dark text-white shadow-xs">
-              <GraduationCap className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-slate-900">{siteConfig.shortName}</p>
-              <p className="text-[11px] font-medium text-brand">Admin Console</p>
+        {/* Desktop Logo and Branding */}
+        <div className="hidden border-b border-slate-100 p-5 md:block">
+          <Link
+            href="/admin/dashboard"
+            className="flex min-w-0 items-center gap-3"
+            aria-label="TICE Admin Dashboard"
+          >
+            <TiceLogo size="lg" />
+
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {siteConfig.shortName}
+              </p>
+              <p className="text-[11px] font-medium text-brand">
+                Admin Console
+              </p>
             </div>
           </Link>
         </div>
 
-        {/* User Session Info Pill */}
-        <div className="mx-3 mt-4 rounded-xl bg-sky-50/70 p-3 border border-sky-100 flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-brand shadow-xs">
+        {/* User Session Info */}
+        <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-sky-100 bg-sky-50/70 p-3">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-brand shadow-xs">
             <ShieldCheck className="h-4 w-4" aria-hidden />
           </div>
-          <div className="overflow-hidden">
-            <p className="text-xs font-bold text-sky-950 truncate">
+
+          <div className="min-w-0 overflow-hidden">
+            <p className="truncate text-xs font-bold text-sky-950">
               {sessionUser?.email || "Administrator"}
             </p>
-            <p className="text-[10px] text-sky-700">Authenticated Session</p>
+            <p className="text-[10px] text-sky-700">
+              Authenticated Session
+            </p>
           </div>
         </div>
 
-        {/* Navigation items */}
-        <nav className="flex flex-col gap-1 p-3" aria-label="Admin navigation">
+        {/* Navigation */}
+        <nav
+          className="flex flex-col gap-1 p-3"
+          aria-label="Admin navigation"
+        >
           <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Management
           </p>
+
           {links.map(({ href, label, icon: Icon }) => {
             const isActive =
               href === "/admin/dashboard"
                 ? pathname === "/admin/dashboard"
                 : pathname.startsWith(href);
+
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                aria-current={isActive ? "page" : undefined}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
                     ? "bg-sky-100/80 text-brand-dark shadow-xs"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 <Icon
-                  className={`h-4 w-4 ${isActive ? "text-brand" : "text-slate-400"}`}
+                  className={`h-4 w-4 shrink-0 ${
+                    isActive ? "text-brand" : "text-slate-400"
+                  }`}
                   aria-hidden
                 />
-                {label}
+                <span>{label}</span>
               </Link>
             );
           })}
@@ -132,10 +175,13 @@ export function AdminSidebar({ sessionUser }) {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
-              <ExternalLink className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+              <ExternalLink
+                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                aria-hidden
+              />
               Public Website
             </span>
           </Link>
@@ -143,9 +189,9 @@ export function AdminSidebar({ sessionUser }) {
           <button
             type="button"
             onClick={logout}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger hover:bg-red-50 transition-colors cursor-pointer mt-2"
+            className="mt-2 flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger transition-colors hover:bg-red-50"
           >
-            <LogOut className="h-3.5 w-3.5" aria-hidden />
+            <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Sign Out
           </button>
         </nav>

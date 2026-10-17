@@ -5,7 +5,7 @@ export const siteConfig = {
   tagline: "Practical computer education for today's digital workplace.",
   contact: {
     address: "Gurmail Park, St. 1, Tibba Road, Near Joga Industry / Satsang Ghar, Ramesh Nagar, Ludhiana, Punjab 141008",
-    phone: "8195955650",
+    phone: "918195955650",
     email: "sksunny78622@gmail.com",
     hours: "Mon–Sat: [Business hours — to be confirmed]",
   },

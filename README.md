@@ -67,7 +67,7 @@ If Cloudinary is missing, photo and certificate uploads fail with a clear error;
 
 ## Rate limiting
 
-Public search, login, and enquiry endpoints are rate limited. For a single server, an in-memory fallback is used. For production with multiple instances, configure [Upstash Redis](https://upstash.com/) REST credentials.
+Public search and login endpoints are rate limited. For a single server, an in-memory fallback is used. For production with multiple instances, configure [Upstash Redis](https://upstash.com/) REST credentials.
 
 ## Student deletion strategy
 

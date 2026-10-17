@@ -146,7 +146,7 @@ export default async function ContactPage({ searchParams }) {
                   Send an Admission Enquiry
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Fill in your details and select your course of interest. We will contact you promptly.
+                  Fill in your details and course of interest. WhatsApp will open with your enquiry ready to review and send.
                 </p>
               </div>
 

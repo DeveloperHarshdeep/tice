@@ -11,6 +11,7 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { courses } from "@/data/courses";
 import { siteImages } from "@/data/images";
 import { siteConfig, getMetadataBase } from "@/lib/site-config";
+import { createWhatsAppUrl } from "@/lib/whatsapp";
 import {
   Award,
   BookOpen,
@@ -180,117 +181,194 @@ export default function HomePage() {
       </section>
 
       {/* 3. CORE COMPUTER COURSES WITH HIGH-RESOLUTION PHOTOGRAPHY */}
-      <section className="py-16 md:py-24 bg-slate-50/50 border-b border-sky-100" aria-labelledby="courses-heading">
+
+      {/* 3. FEATURED COURSES WITH FEES AND WHATSAPP ENQUIRIES */}
+      <section
+        className="border-b border-sky-100 bg-slate-50/50 py-16 md:py-24"
+        aria-labelledby="courses-heading"
+      >
         <Container>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-12">
+          <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <Badge tone="sky">Curriculum & Programs</Badge>
+
               <h2
                 id="courses-heading"
                 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
               >
                 Featured Computer Programs
               </h2>
-              <p className="mt-2 text-sm text-slate-600 max-w-xl">
-                Every course is backed by structured syllabi, hands-on lab modules, practical evaluations,
-                and an official verifiable certificate upon completion.
+
+              <p className="mt-2 max-w-xl text-sm text-slate-600">
+                Explore our practical computer courses, transparent course
+                fees, structured syllabi, and hands-on training programs.
               </p>
             </div>
+
             <Button
               href="/courses"
               variant="secondary"
               size="md"
-              className="border-sky-200 bg-white text-sky-950 hover:bg-sky-50"
+              className="shrink-0 border-sky-200 bg-white text-sky-950 hover:bg-sky-50"
             >
               View All {courses.length} Courses
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
           </div>
 
-          {/* Photographic Course Cards Grid */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {courses.slice(0, 3).map((course, idx) => {
-              const photo = siteImages.courses[course.id] || siteImages.courses["basic-computer"];
+          {/* Display only the first five courses */}
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.slice(0, 5).map((course, idx) => {
+              const photo =
+                siteImages.courses[course.id] ||
+                siteImages.courses["basic-computer"];
+
+              const message = [
+                `Hello ${siteConfig.name}!`,
+                "",
+                "Course Enquiry",
+                "",
+                `Course: ${course.title}`,
+                `Course ID: ${course.id}`,
+                `Fee: ${course.fee || "Please share the fee"}`,
+                `Duration: ${course.duration || "Not specified"}`,
+                `Level: ${course.level || "Not specified"}`,
+                "",
+                "Please share the syllabus, batch timings, and admission details.",
+                "",
+                "Thank you!",
+              ].join("\n");
+
+              const whatsappUrl =
+                createWhatsAppUrl(message, siteConfig.contact.phone) ||
+                `/contact?course=${encodeURIComponent(course.title)}`;
+
               return (
                 <ScrollReveal key={course.id} delay={idx * 100}>
                   <Card
                     hoverLift
-                    className="flex h-full flex-col justify-between overflow-hidden border-sky-100 bg-white shadow-xs group"
+                    className="group flex h-full flex-col justify-between overflow-hidden border-sky-100 bg-white shadow-sm"
                   >
                     <div>
-                      {/* Course Image Banner with Hover Scale */}
+                      {/* Course Image */}
                       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                         <Image
                           src={photo.url}
                           alt={photo.alt}
                           fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
-                        <div className="absolute top-3 left-3">
-                          <span className="rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-950 backdrop-blur-xs">
+
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+
+                        <div className="absolute left-3 top-3">
+                          <span className="rounded-md bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-950 backdrop-blur-sm">
                             {course.category}
                           </span>
                         </div>
+
                         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold drop-shadow-xs">
-                            <Clock className="h-3.5 w-3.5 text-sky-300" aria-hidden />
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold">
+                            <Clock
+                              className="h-3.5 w-3.5 text-sky-300"
+                              aria-hidden
+                            />
                             {course.duration}
                           </span>
-                          <span className="rounded bg-sky-500/90 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
+
+                          <span className="rounded bg-sky-500/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider">
                             {course.level}
                           </span>
                         </div>
                       </div>
 
-                      {/* Course Body Content */}
+                      {/* Course Information */}
                       <div className="p-6">
-                        <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#0284c7] transition-colors leading-snug">
+                        <h3 className="text-lg font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#0284c7]">
                           <Link href={`/courses/${course.id}`}>
                             {course.title}
                           </Link>
                         </h3>
 
-                        <p className="mt-2 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                        <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-600">
                           {course.description}
                         </p>
 
-                        {/* Syllabus Highlights */}
-                        <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            Core Modules
+                        {/* Course Fee */}
+                        <div className="mt-4 flex items-center justify-between rounded-xl border border-sky-100 bg-sky-50/70 p-4">
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              Course Fee
+                            </p>
+
+                            <p className="mt-1 text-xl font-extrabold text-slate-900">
+                              {course.fee || "Contact for fee"}
+                            </p>
+                          </div>
+
+                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0284c7] shadow-sm">
+                            <span className="text-xl font-bold">₹</span>
+                          </span>
+                        </div>
+
+                        {/* Course Duration */}
+                        {course.durationHours ? (
+                          <p className="mt-3 text-xs text-slate-500">
+                            Training:{" "}
+                            <span className="font-semibold text-slate-700">
+                              {course.durationHours}
+                            </span>
                           </p>
-                          <ul className="space-y-1 text-xs text-slate-600">
-                            {course.highlights.slice(0, 3).map((h) => (
-                              <li key={h} className="flex items-center gap-1.5">
-                                <Check className="h-3.5 w-3.5 text-[#0284c7] shrink-0" aria-hidden />
-                                <span className="line-clamp-1">{h}</span>
-                              </li>
-                            ))}
+                        ) : null}
+
+                        {/* Core Modules */}
+                        <div className="mt-4 border-t border-slate-100 pt-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            What You Will Learn
+                          </p>
+
+                          <ul className="mt-2 space-y-2">
+                            {(course.highlights || [])
+                              .slice(0, 3)
+                              .map((highlight) => (
+                                <li
+                                  key={highlight}
+                                  className="flex items-start gap-2 text-xs text-slate-600"
+                                >
+                                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0284c7]" aria-hidden />
+                                  <span className="line-clamp-2">
+                                    {highlight}
+                                  </span>
+                                </li>
+                              ))}
                           </ul>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card Actions */}
-                    <div className="p-6 pt-0 border-t border-slate-100">
-                      <div className="mt-4 grid grid-cols-2 gap-2">
+                    {/* Course Actions */}
+                    <div className="border-t border-slate-100 p-6 pt-4">
+                      <div className="grid grid-cols-2 gap-2">
                         <Button
                           href={`/courses/${course.id}`}
                           variant="secondary"
                           size="sm"
-                          className="w-full text-xs font-semibold border-sky-200 hover:bg-sky-50"
+                          className="w-full border-sky-200 text-xs font-semibold hover:bg-sky-50"
                         >
                           Syllabus
+                          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                         </Button>
+
                         <Button
-                          href={`/contact?course=${encodeURIComponent(course.title)}`}
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           variant="primary"
                           size="sm"
-                          className="w-full text-xs font-semibold bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] text-white"
+                          className="w-full bg-[#16a34a] text-xs font-semibold text-white hover:bg-[#15803d]"
                         >
-                          Enquire
+                          Enquire on WhatsApp
                         </Button>
                       </div>
                     </div>
@@ -300,29 +378,34 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* Quick Programs Bar */}
-          <div className="mt-10 rounded-2xl border border-sky-200 bg-white p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-xs">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0284c7] border border-sky-100">
-                <BookOpen className="h-5 w-5" aria-hidden />
+          {/* View All Courses */}
+          {courses.length > 5 ? (
+            <div className="mt-10 flex flex-col items-center rounded-2xl border border-sky-200 bg-white p-7 text-center shadow-sm sm:p-9">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-[#0284c7]">
+                <BookOpen className="h-6 w-6" aria-hidden />
               </span>
-              <div>
-                <p className="text-xs font-bold text-slate-900">
-                  Looking for Python Programming or 1-Year DCA Diploma?
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  We offer comprehensive multi-tier diplomas and specialized coding tracks.
-                </p>
-              </div>
+
+              <h3 className="mt-4 text-lg font-bold text-slate-900">
+                Explore All Our Courses
+              </h3>
+
+              <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
+                Find the right program for your career goals. Browse all
+                courses, compare fees, explore syllabi, and enquire directly
+                with our institute.
+              </p>
+
+              <Button
+                href="/courses"
+                variant="primary"
+                size="lg"
+                className="mt-5 bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] font-bold text-white"
+              >
+                View All {courses.length} Courses
+                <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+              </Button>
             </div>
-            <Link
-              href="/courses"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0284c7] hover:underline shrink-0"
-            >
-              <span>Explore All {courses.length} Programs</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
-          </div>
+          ) : null}
         </Container>
       </section>
 

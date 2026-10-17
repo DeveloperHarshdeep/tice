@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { courses, getCourseById } from "@/data/courses";
 import { siteImages } from "@/data/images";
 import { siteConfig, getMetadataBase } from "@/lib/site-config";
+import { createWhatsAppUrl } from "@/lib/whatsapp";
 import {
   Check,
   Clock,
@@ -79,6 +80,25 @@ export default async function CourseDetailPage({ params }) {
   const base = getMetadataBase().origin;
   const otherCourses = courses.filter((c) => c.id !== course.id).slice(0, 3);
   const photo = siteImages.courses[course.id] || siteImages.courses["basic-computer"];
+  const enquiryMessage = [
+    `Hello ${siteConfig.name}!`,
+    "",
+    "I would like to enquire about admission.",
+    "",
+    `Course: ${course.title}`,
+    ...(course.fee ? [`Fee: ${course.fee}`] : []),
+    `Duration: ${course.duration || "Not specified"}`,
+    "",
+    "Please share admission details and the next batch schedule.",
+    "",
+    "Thank you!",
+  ].join("\n");
+  const whatsappUrl = createWhatsAppUrl(
+    enquiryMessage,
+    siteConfig.contact.phone,
+  );
+  const enquiryHref =
+    whatsappUrl || `/contact?course=${encodeURIComponent(course.title)}`;
 
   const courseSchema = {
     "@context": "https://schema.org",
@@ -116,7 +136,14 @@ export default async function CourseDetailPage({ params }) {
         image={photo}
         actions={
           <Button
-            href={`/contact?course=${encodeURIComponent(course.title)}`}
+            href={enquiryHref}
+            target={whatsappUrl ? "_blank" : undefined}
+            rel={whatsappUrl ? "noopener noreferrer" : undefined}
+            title={
+              whatsappUrl
+                ? undefined
+                : "WhatsApp is unavailable; use the contact form instead."
+            }
             size="lg"
             variant="primary"
             className="bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] text-white font-semibold"
@@ -322,7 +349,14 @@ export default async function CourseDetailPage({ params }) {
 
               <div className="mt-6 space-y-2">
                 <Button
-                  href={`/contact?course=${encodeURIComponent(course.title)}`}
+                  href={enquiryHref}
+                  target={whatsappUrl ? "_blank" : undefined}
+                  rel={whatsappUrl ? "noopener noreferrer" : undefined}
+                  title={
+                    whatsappUrl
+                      ? undefined
+                      : "WhatsApp is unavailable; use the contact form instead."
+                  }
                   className="w-full justify-center bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] text-white font-semibold"
                   size="md"
                 >
@@ -336,7 +370,7 @@ export default async function CourseDetailPage({ params }) {
                   size="sm"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-[#0284c7]" aria-hidden />
-                  Verify Sample Certificate
+                  Verify Certificate
                 </Button>
               </div>
             </div>

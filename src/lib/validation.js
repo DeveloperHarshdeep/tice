@@ -6,19 +6,6 @@ export const loginSchema = z.object({
   password: z.string().min(6).max(128),
 });
 
-export const enquirySchema = z
-  .object({
-    name: z.string().trim().min(2).max(120),
-    phone: z.string().trim().min(7).max(20).optional().or(z.literal("")),
-    email: z.string().trim().email().max(255).optional().or(z.literal("")),
-    courseOfInterest: z.string().trim().max(120).optional().or(z.literal("")),
-    message: z.string().trim().min(10).max(2000),
-  })
-  .refine((data) => data.phone || data.email, {
-    message: "Provide at least a phone number or email address.",
-    path: ["phone"],
-  });
-
 export const certificateSearchSchema = z.object({
   rollNumber: z
     .string()
