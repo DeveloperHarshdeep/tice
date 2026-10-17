@@ -29,6 +29,21 @@ export function getCleanMongoUri() {
   return uri;
 }
 
+export function getMongoDatabaseName() {
+  const uri = process.env.MONGODB_URI?.trim();
+  const configuredName = uri?.match(
+    /^mongodb(?:\+srv)?:\/\/[^/?]*(?:\/([^/?]*))?/i,
+  )?.[1];
+
+  return configuredName || mongoose.connection.name || null;
+}
+
+export function getMongoConnectionState() {
+  return ["disconnected", "connected", "connecting", "disconnecting"][
+    mongoose.connection.readyState
+  ] || "unknown";
+}
+
 export function assertMongoConfigured() {
   getCleanMongoUri();
 }
@@ -57,21 +72,21 @@ export async function connectDB() {
         bufferCommands: false,
       })
       .then((instance) => {
-        console.log(
-          "[MongoDB] Connected host:",
-          instance.connection.host
-        );
-
-        console.log(
-          "[MongoDB] Database:",
-          instance.connection.name
-        );
+        console.info("[MongoDB] Connected", {
+          database: instance.connection.name,
+          state: "connected",
+        });
 
         return instance;
       })
       .catch((error) => {
         cached.promise = null;
         cached.uri = null;
+        console.error("[MongoDB] Connection failed", {
+          database: getMongoDatabaseName(),
+          state: getMongoConnectionState(),
+          errorType: error?.name || "Error",
+        });
         throw error;
       });
   }

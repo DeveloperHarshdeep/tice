@@ -51,6 +51,12 @@ Open [http://localhost:3000](http://localhost:3000). Admin login: `/admin/login`
 
 Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or a self-hosted instance. Whitelist your IP and create a database user with read/write access. Set `MONGODB_URI` to the connection string.
 
+## Production deployment
+
+Local `.env*` files are ignored by Git and are not copied to the hosting provider. Add `MONGODB_URI` in the provider's server-side production environment settings, using the same Atlas cluster and database as local development. The database name comes from the URI path; the current local setup selects `tice`. Do not prefix this variable with `NEXT_PUBLIC_`.
+
+After changing environment variables, redeploy so the running application receives them. Ensure the Atlas database user has the required database access and that Atlas network access permits connections from the hosting environment using the provider's recommended secure egress configuration. Do not open Atlas access to all IPs as a workaround.
+
 ## Cloudinary
 
 1. Create a Cloudinary cloud.

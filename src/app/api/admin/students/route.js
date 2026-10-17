@@ -1,4 +1,8 @@
-import { connectDB } from "@/lib/db";
+import {
+  connectDB,
+  getMongoConnectionState,
+  getMongoDatabaseName,
+} from "@/lib/db";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
@@ -12,7 +16,10 @@ import { getCourseById } from "@/data/courses";
 
 export async function GET(request) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) {
+    console.warn("[api/admin/students] Unauthorized request", { status: 401 });
+    return jsonError("Unauthorized.", 401);
+  }
 
   const { searchParams } = new URL(request.url);
   const parsed = paginationSchema.safeParse({
@@ -35,6 +42,17 @@ export async function GET(request) {
 
   try {
     await connectDB();
+  } catch (err) {
+    console.error("[api/admin/students] Database connection unavailable", {
+      database: getMongoDatabaseName(),
+      state: getMongoConnectionState(),
+      configured: Boolean(process.env.MONGODB_URI?.trim()),
+      errorType: err?.name || "Error",
+    });
+    return jsonError("Student database is unavailable.", 503, "DATABASE_UNAVAILABLE");
+  }
+
+  try {
     const [items, total] = await Promise.all([
       Student.find(filter)
         .sort({ createdAt: -1 })
@@ -51,10 +69,22 @@ export async function GET(request) {
         s.courseName || getCourseById(s.courseId)?.title || s.courseId || "General Computing",
     }));
 
+    console.info("[api/admin/students] Query succeeded", {
+      database: getMongoDatabaseName(),
+      state: getMongoConnectionState(),
+      resultCount: items.length,
+      total,
+      status: 200,
+    });
+
     return jsonSuccess({ items: data, page, limit, total });
   } catch (err) {
-    console.error("List students error:", err.message);
-    return jsonError("Unable to load students.", 500);
+    console.error("[api/admin/students] Student query failed", {
+      database: getMongoDatabaseName(),
+      state: getMongoConnectionState(),
+      errorType: err?.name || "Error",
+    });
+    return jsonError("Unable to load students.", 500, "STUDENT_QUERY_FAILED");
   }
 }
 

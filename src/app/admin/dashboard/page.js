@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { connectDB } from "@/lib/db";
+import {
+  connectDB,
+  getMongoConnectionState,
+  getMongoDatabaseName,
+} from "@/lib/db";
 import Student from "@/models/Student";
 import Certificate from "@/models/Certificate";
 import Result from "@/models/Result";
@@ -25,9 +29,9 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  let totalStudents = 0;
-  let totalCertificates = 0;
-  let totalResults = 0;
+  let totalStudents = null;
+  let totalCertificates = null;
+  let totalResults = null;
 
   try {
     await connectDB();
@@ -46,7 +50,11 @@ export default async function AdminDashboardPage() {
     totalCertificates = certCount;
     totalResults = resultCount;
   } catch (err) {
-    console.warn("Dashboard database query notice:", err.message);
+    console.error("[admin/dashboard] Database metrics unavailable", {
+      database: getMongoDatabaseName(),
+      state: getMongoConnectionState(),
+      errorType: err?.name || "Error",
+    });
   }
 
   const sections = [
@@ -110,6 +118,15 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Real-time Metric Cards */}
+      {totalStudents === null ? (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          Dashboard metrics are unavailable because the database could not be
+          reached. Student records have not been replaced with sample data.
+        </p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs flex items-center justify-between">
           <div>
@@ -117,7 +134,7 @@ export default async function AdminDashboardPage() {
               Total Students Registered
             </p>
             <p className="mt-1 text-3xl font-extrabold text-slate-900">
-              {totalStudents}
+              {totalStudents ?? "Unavailable"}
             </p>
             <p className="mt-0.5 text-[11px] text-brand font-medium">
               Active enrolled students
@@ -134,7 +151,7 @@ export default async function AdminDashboardPage() {
               Total Certificates Issued
             </p>
             <p className="mt-1 text-3xl font-extrabold text-slate-900">
-              {totalCertificates}
+              {totalCertificates ?? "Unavailable"}
             </p>
             <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">
               Verified portrait credentials
@@ -151,7 +168,7 @@ export default async function AdminDashboardPage() {
               Total Results Uploaded
             </p>
             <p className="mt-1 text-3xl font-extrabold text-slate-900">
-              {totalResults}
+              {totalResults ?? "Unavailable"}
             </p>
             <p className="mt-0.5 text-[11px] text-cyan-700 font-medium">
               Official scorecards & marksheets
@@ -181,7 +198,7 @@ export default async function AdminDashboardPage() {
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
                   <span className="text-[11px] font-bold text-slate-700 bg-slate-100 rounded-lg px-2.5 py-1">
-                    {section.count} {section.countLabel}
+                    {section.count ?? "Unavailable"} {section.countLabel}
                   </span>
                 </div>
 

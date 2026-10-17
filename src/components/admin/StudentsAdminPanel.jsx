@@ -43,6 +43,7 @@ export function StudentsAdminPanel() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState(emptyForm);
@@ -53,12 +54,15 @@ export function StudentsAdminPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setLoadError("");
     try {
       const data = await adminFetch(`/api/admin/students?q=${encodeURIComponent(q)}`);
-      setItems(data.items || []);
+      if (!Array.isArray(data?.items)) {
+        throw new Error("The student list response was invalid. Please try again.");
+      }
+      setItems(data.items);
     } catch (err) {
-      setError(err.message);
+      setLoadError(err.message || "Unable to load students. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -210,7 +214,13 @@ export function StudentsAdminPanel() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone="sky">{items.length} Registered Students</Badge>
+          <Badge tone="sky">
+            {loading
+              ? "Loading students…"
+              : loadError
+                ? "Student list unavailable"
+                : `${items.length} Registered Students`}
+          </Badge>
         </div>
       </div>
 
@@ -390,13 +400,32 @@ export function StudentsAdminPanel() {
             />
           </div>
           <span className="text-xs font-semibold text-slate-500">
-            Showing {items.length} students
+            {loading
+              ? "Loading students…"
+              : loadError
+                ? "Student list unavailable"
+                : `Showing ${items.length} students`}
           </span>
         </div>
 
         {loading ? (
           <Card className="py-16 text-center">
             <Spinner label="Loading students directory from database…" size="md" />
+          </Card>
+        ) : loadError ? (
+          <Card className="py-10 text-center">
+            <p className="font-bold text-slate-900 text-sm">
+              Unable to load the student directory
+            </p>
+            <p className="mt-2 text-sm text-slate-500">{loadError}</p>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={load}
+              className="mt-4"
+            >
+              Retry
+            </Button>
           </Card>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-sky-100 bg-white shadow-xs">
