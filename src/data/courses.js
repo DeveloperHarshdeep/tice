@@ -6,6 +6,7 @@ export const courses = [
   {
     id: "data-analyst",
     institute: "Talent Institute & Computer Education",
+      thumbnail: "/course-images/Data-analysis.jpg",
     title: "Data Analyst Course",
     shortTitle: "Data Analyst",
     level: "Beginner to Intermediate",
@@ -92,6 +93,7 @@ export const courses = [
   {
     id: "web-designing",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Web-designing.jpg",
     title: "Web Designing Course",
     shortTitle: "Web Design",
     level: "Beginner to Intermediate",
@@ -178,6 +180,7 @@ export const courses = [
   {
     id: "tally-prime-gst",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Tally.jpg",
     title: "Tally Prime with GST",
     shortTitle: "Tally Prime",
     level: "Beginner",
@@ -255,6 +258,7 @@ export const courses = [
   {
     id: "python-programming",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Python.jpg",
     title: "Python Programming Course",
     shortTitle: "Python",
     level: "Beginner",
@@ -332,6 +336,7 @@ export const courses = [
   {
     id: "advanced-excel",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Advanced-Excel.jpg",
     title: "Advanced Microsoft Excel",
     shortTitle: "Adv. Excel",
     level: "Intermediate",
@@ -409,6 +414,7 @@ export const courses = [
   {
     id: "video-editing-filmora",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Video-editing.jpg",
     title: "Video Editing with Filmora",
     shortTitle: "Filmora Editing",
     level: "Beginner",
@@ -486,6 +492,7 @@ export const courses = [
   {
     id: "coreldraw-design",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/corel.jpg",
     title: "CorelDRAW Graphic Design",
     shortTitle: "CorelDRAW",
     level: "Beginner",
@@ -563,6 +570,7 @@ export const courses = [
   {
     id: "adobe-photoshop",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Photoshop.jpg",
     title: "Adobe Photoshop",
     shortTitle: "Photoshop",
     level: "Beginner",
@@ -640,6 +648,7 @@ export const courses = [
   {
     id: "ai-tools-productivity",
     institute: "Talent Institute & Computer Education",
+    thumbnail: "/course-images/Ai.jpg",
     title: "AI Tools & Productivity Course",
     shortTitle: "AI Tools",
     level: "Beginner to Intermediate",
