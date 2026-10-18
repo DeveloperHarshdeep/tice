@@ -1,0 +1,101 @@
+/* Featured courses: infinite right-to-left marquee */
+
+.home-course-carousel {
+  /* Slide widths are measured against this box via cqw units */
+  container-type: inline-size;
+  overflow: hidden; /* fallback */
+  overflow: clip; /* also blocks focus-driven scrolling that would break the loop */
+  /* Extra room so card shadows / hover lift aren't cut off.
+     The negative margin cancels it out, so surrounding layout doesn't shift. */
+  margin: -1.5rem -0.75rem;
+  padding-block: 1.5rem;
+}
+
+.home-course-carousel__track {
+  display: flex;
+  width: max-content;
+  animation: home-course-marquee var(--home-course-marquee-duration, 45s) linear
+    infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Pause on mouse hover (hover-capable devices) and on keyboard/any focus inside */
+@media (hover: hover) {
+  .home-course-carousel:hover .home-course-carousel__track {
+    animation-play-state: paused;
+  }
+}
+
+.home-course-carousel:focus-within .home-course-carousel__track {
+  animation-play-state: paused;
+}
+
+/* One full set of cards. Two identical sets => translating -50% loops seamlessly. */
+.home-course-carousel__sequence {
+  display: flex;
+  flex: none;
+}
+
+/* Gap is padding (not flex gap) so a sequence is exactly half of the track. */
+.home-course-carousel__slide {
+  display: flex;
+  flex: none;
+  box-sizing: border-box;
+  padding-inline: 0.75rem;
+  /* Mobile: one card with a peek of the next */
+  width: min(85vw, 22rem); /* fallback if cqw is unsupported */
+  width: calc(100cqw * 0.85);
+}
+
+.home-course-carousel__slide > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Tablet: 2 cards */
+@media (min-width: 640px) {
+  .home-course-carousel__slide {
+    width: 24rem;
+    width: calc(100cqw / 2);
+  }
+}
+
+/* Desktop: 3 cards */
+@media (min-width: 1024px) {
+  .home-course-carousel__slide {
+    width: 26rem;
+    width: calc(100cqw / 3);
+  }
+}
+
+@keyframes home-course-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Reduced motion: no animation; becomes a manual swipe/scroll row (no duplicates) */
+@media (prefers-reduced-motion: reduce) {
+  .home-course-carousel {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .home-course-carousel__track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .home-course-carousel__sequence[aria-hidden="true"] {
+    display: none;
+  }
+
+  .home-course-carousel__slide {
+    scroll-snap-align: start;
+  }
+}

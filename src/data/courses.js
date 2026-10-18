@@ -6,7 +6,7 @@ export const courses = [
   {
     id: "data-analyst",
     institute: "Talent Institute & Computer Education",
-      thumbnail: "/course-images/Data-analysis.jpg",
+      thumbnail: "/course-images/Data-Analysis.jpg",
     title: "Data Analyst Course",
     shortTitle: "Data Analyst",
     level: "Beginner to Intermediate",
@@ -93,7 +93,7 @@ export const courses = [
   {
     id: "web-designing",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Web-designing.jpg",
+    thumbnail: "/course-images/web-designing.jpg",
     title: "Web Designing Course",
     shortTitle: "Web Design",
     level: "Beginner to Intermediate",

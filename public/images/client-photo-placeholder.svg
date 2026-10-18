@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" fill="none">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e0f2fe"/>
+      <stop offset="1" stop-color="#cffafe"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#background)"/>
+  <rect x="115" y="180" width="570" height="500" rx="32" stroke="#0284c7" stroke-width="12" stroke-dasharray="24 24"/>
+  <path d="M286 532l102-112 83 88 57-58 102 116H286z" fill="#7dd3fc"/>
+  <circle cx="319" cy="337" r="36" fill="#38bdf8"/>
+  <text x="400" y="772" fill="#075985" font-family="Arial, sans-serif" font-size="32" font-weight="700" text-anchor="middle">ADD CLIENT PHOTO</text>
+  <text x="400" y="824" fill="#0369a1" font-family="Arial, sans-serif" font-size="24" text-anchor="middle">public/images/client-photo.jpg</text>
+</svg>

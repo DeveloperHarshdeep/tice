@@ -187,3 +187,55 @@ body {
     padding: 24px !important;
   }
 }
+
+.home-course-carousel {
+  container-type: inline-size;
+}
+
+.home-course-carousel__track {
+  display: flex;
+  width: max-content;
+  animation: home-course-marquee 48s linear infinite;
+}
+
+.home-course-carousel__sequence {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.home-course-carousel__slide {
+  flex: 0 0 82cqi;
+  min-width: 0;
+}
+
+.home-course-carousel:hover .home-course-carousel__track,
+.home-course-carousel:focus-within .home-course-carousel__track {
+  animation-play-state: paused;
+}
+
+@keyframes home-course-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 40rem) {
+  .home-course-carousel__slide {
+    flex-basis: calc((100cqi - 1rem) / 2);
+  }
+}
+
+@media (min-width: 64rem) {
+  .home-course-carousel__slide {
+    flex-basis: calc((100cqi - 2rem) / 3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-course-carousel__track {
+    animation: none !important;
+    transform: none !important;
+  }
+}

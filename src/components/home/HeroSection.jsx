@@ -1,61 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   ShieldCheck,
   ArrowRight,
   FileCheck2,
   Monitor,
-  CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
-import { siteImages } from "@/data/images";
-
-const heroSlides = [
-  {
-    id: "students-lab",
-    tag: "Practical Lab Training",
-    title: "1:1 Dedicated PC Allocation",
-    subtitle: "Students working on real-world projects in an individual workstation environment",
-    url: siteImages.hero.primary.url,
-    alt: siteImages.hero.primary.alt,
-  },
-  {
-    id: "collaborative",
-    tag: "Software & Web Design",
-    title: "Modern Development & Tools",
-    subtitle: "Hands-on coding, responsive web design, and programming foundations",
-    url: siteImages.hero.secondary.url,
-    alt: siteImages.hero.secondary.alt,
-  },
-  {
-    id: "workstations",
-    tag: "Modern Infrastructure",
-    title: "Ergonomic Computer Desks",
-    subtitle: "High-speed lab setup equipped with modern office productivity suites and TallyPrime",
-    url: siteImages.hero.labRow.url,
-    alt: siteImages.hero.labRow.alt,
-  },
-];
 
 export function HeroSection() {
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Auto-cycle through genuine educational photographs every 5 seconds for subtle visual motion
-  useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isPaused]);
-
-  const current = heroSlides[activeSlide];
+  const [photoUnavailable, setPhotoUnavailable] = useState(false);
 
   return (
     <section className="relative overflow-hidden border-b border-sky-100 bg-gradient-to-b from-sky-50/70 via-white to-white py-12 sm:py-16 lg:py-20">
@@ -149,86 +106,43 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Right Column: Editorial Photograph Composition with Motion & Interactivity */}
-        <div
-          className="lg:col-span-5 relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {/* Main Photo Card Frame */}
-          <div className="relative rounded-2xl border-2 border-white bg-white p-2 shadow-xl shadow-sky-900/10 transition-transform duration-300">
-            {/* Primary Aspect Ratio Image Container */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
-              {heroSlides.map((slide, idx) => (
-                <div
-                  key={slide.id}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                    idx === activeSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-                  }`}
-                >
-                  <Image
-                    src={slide.url}
-                    alt={slide.alt}
-                    fill
-                    priority={idx === 0}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
-                    className="object-cover transition-transform duration-700 hover:scale-105"
-                  />
-                  {/* Subtle photographic vignette overlay for contrast */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
-
-                  {/* On-image caption bar */}
-                  <div className="absolute bottom-3 left-3 right-3 text-white pointer-events-none">
-                    <span className="inline-block rounded bg-sky-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
-                      {slide.tag}
-                    </span>
-                    <p className="mt-1 text-sm font-bold text-white drop-shadow-xs">
-                      {slide.title}
-                    </p>
-                    <p className="text-[11px] text-slate-200 line-clamp-1 drop-shadow-xs">
-                      {slide.subtitle}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Slide Navigation Controls & Interactive Indicators */}
-            <div className="mt-3 flex items-center justify-between px-2 py-1">
-              <div className="flex items-center gap-1.5">
-                {heroSlides.map((slide, idx) => (
-                  <button
-                    key={slide.id}
-                    type="button"
-                    onClick={() => setActiveSlide(idx)}
-                    aria-label={`View ${slide.tag} photograph`}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      idx === activeSlide
-                        ? "w-8 bg-[#0284c7]"
-                        : "w-2 bg-slate-200 hover:bg-slate-300"
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>Live Lab Environment</span>
-              </div>
+        {/* Right Column: Client portrait */}
+        <div className="relative lg:col-span-5">
+          <div className="relative rounded-3xl border-2 border-white bg-white p-2 shadow-xl shadow-sky-900/10">
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-sky-50">
+              {!photoUnavailable ? (
+                <Image
+                  src="/images/client-photo.jpg"
+                  alt="The TICE client's portrait"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover"
+                  onError={() => setPhotoUnavailable(true)}
+                />
+              ) : (
+                <Image
+                  src="/images/client-photo-placeholder.svg"
+                  alt="Client portrait placeholder. Add the photograph at public/images/client-photo.jpg."
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover"
+                />
+              )}
             </div>
           </div>
 
-          {/* Genuine Institutional Accent Floating Pill */}
-          <div className="absolute -bottom-5 -left-4 hidden sm:flex items-center gap-3 rounded-xl border border-sky-200/80 bg-white/95 p-3 shadow-lg backdrop-blur-md z-20 animate-float">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-[#0284c7] border border-sky-100">
+          <div className="mt-4 flex animate-float items-center gap-3 rounded-xl border border-sky-200/80 bg-white/95 p-3 shadow-md">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-sky-100 bg-sky-50 text-[#0284c7]">
               <Monitor className="h-5 w-5" aria-hidden />
             </span>
             <div>
               <p className="text-xs font-bold text-slate-900">
-                1:1 Workstation Setup
+                Talent Institute & Computer Education
               </p>
               <p className="text-[11px] text-slate-500">
-                Dedicated PC for every single student
+                Practical learning, personal guidance
               </p>
             </div>
           </div>
