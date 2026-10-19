@@ -38,13 +38,18 @@ export async function POST(request) {
       });
     }
 
-    // Check if result document exists on student or in Result collection
-    const resultDoc = await Result.findOne({
-      student: student._id,
-      publicationStatus: "published",
-    }).sort({ publishedAt: -1 });
+    const latestResult = await Result.findOne({ student: student._id })
+      .sort({ updatedAt: -1 })
+      .lean();
+    const resultDoc =
+      latestResult?.publicationStatus === "published" ? latestResult : null;
 
-    if (!student.resultUrl && !resultDoc) {
+    if (
+      !resultDoc &&
+      (latestResult ||
+        student.resultPublicationStatus === "draft" ||
+        !student.resultUrl)
+    ) {
       return jsonSuccess({
         found: false,
         message: "No result found for this roll number.",
@@ -56,8 +61,22 @@ export async function POST(request) {
 
     const marksObtained = resultDoc?.marksObtained ?? student.marksObtained;
     const maxMarks = resultDoc?.maxMarks ?? student.maxMarks ?? 100;
-    const percentage = resultDoc?.percentage ?? student.percentage ?? (marksObtained ? Math.round((marksObtained / maxMarks) * 100) : null);
-    const grade = resultDoc?.grade ?? student.grade ?? (percentage ? (percentage >= 80 ? "A+" : percentage >= 70 ? "A" : percentage >= 60 ? "B" : percentage >= 50 ? "C" : "D") : null);
+    const percentage =
+      resultDoc?.percentage ??
+      student.percentage ??
+      (marksObtained !== undefined && marksObtained !== null ?
+        Math.round((marksObtained / maxMarks) * 100)
+      : null);
+    const grade =
+      resultDoc?.grade ??
+      student.grade ??
+      (percentage !== null ?
+        percentage >= 80 ? "A+"
+        : percentage >= 70 ? "A"
+        : percentage >= 60 ? "B"
+        : percentage >= 50 ? "C"
+        : "D"
+      : null);
 
     return jsonSuccess({
       found: true,

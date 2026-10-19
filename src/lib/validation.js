@@ -6,6 +6,18 @@ export const loginSchema = z.object({
   password: z.string().min(6).max(128),
 });
 
+export const adminRegistrationSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(255).transform((value) => value.toLowerCase()),
+    password: z.string().min(8).max(128),
+    confirmPassword: z.string().min(8).max(128),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export const certificateSearchSchema = z.object({
   rollNumber: z
     .string()

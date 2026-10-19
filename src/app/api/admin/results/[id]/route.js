@@ -1,7 +1,8 @@
 import { connectDB } from "@/lib/db";
 import Result from "@/models/Result";
+import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { parseJsonBody, resultUpdateSchema } from "@/lib/validation";
 import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
@@ -14,7 +15,7 @@ async function getIdParams(params) {
 
 export async function GET(request, { params }) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid result ID.", 400);
@@ -35,7 +36,7 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid result ID.", 400);
@@ -76,12 +77,12 @@ export async function PATCH(request, { params }) {
     );
 
     if (existing.student) {
-      const Student = (await import("@/models/Student")).default;
       const studentUpdates = {
         marksObtained,
         maxMarks,
         percentage: computed.percentage,
         grade: computed.grade,
+        resultPublicationStatus: result.publicationStatus,
       };
       if (parsed.data.resultUrl) {
         studentUpdates.resultUrl = parsed.data.resultUrl;
@@ -102,7 +103,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid result ID.", 400);
@@ -120,6 +121,12 @@ export async function DELETE(request, { params }) {
     }
 
     await Result.deleteOne({ _id: id });
+    if (result.student) {
+      await Student.updateOne(
+        { _id: result.student },
+        { $set: { resultPublicationStatus: "draft" } },
+      );
+    }
     return jsonSuccess({ deleted: true });
   } catch (err) {
     console.error("Delete result:", err.message);

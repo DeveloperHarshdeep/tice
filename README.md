@@ -21,8 +21,8 @@ cp .env.example .env.local
 | Variable | Purpose |
 |----------|---------|
 | `MONGODB_URI` | MongoDB connection string |
-| `SESSION_SECRET` | At least 32 random characters (server-only) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | One-time bootstrap credentials |
+| `SESSION_SECRET` | At least 32 random characters (server-only); required for login |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Optional one-time bootstrap credentials when no admin exists |
 | `CLOUDINARY_*` | Server-side upload credentials |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL for SEO metadata |
 | `UPSTASH_REDIS_*` | Optional; recommended for rate limits in production |
@@ -33,7 +33,7 @@ cp .env.example .env.local
 npm install
 ```
 
-4. Create the administrator (runs once; refuses if an admin already exists):
+4. Create the initial administrator (runs once; refuses if an admin already exists):
 
 ```bash
 npm run create-admin
@@ -47,9 +47,50 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Admin login: `/admin/login`.
 
+Additional administrators can register at `/admin/register` while database-controlled registration is enabled. New accounts share the same institute records and have no separate data partition.
+
 ## MongoDB
 
 Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or a self-hosted instance. Whitelist your IP and create a database user with read/write access. Set `MONGODB_URI` to the connection string.
+
+### Enable or disable administrator registration
+
+Registration is controlled only by the `settings` collection in the same MongoDB database selected by `MONGODB_URI` (the existing project setup uses the `tice` database). The document can use MongoDB's normal ObjectId `_id` with `id: "admin"`:
+
+```json
+{
+  "id": "admin",
+  "adminRegistrationEnabled": true
+}
+```
+
+For compatibility, the application also recognizes the older `{ "_id": "admin" }` string-id document. If neither form exists, or the field is missing or not the Boolean `true`, registration is disabled. If duplicate matching setting documents exist, all must explicitly enable registration. No public API can change this setting.
+
+In MongoDB Atlas, open **Database > Browse Collections**, select the database named in the `MONGODB_URI` path, then open the `settings` collection:
+
+1. Find the existing settings document identified by `id: "admin"` (or legacy string `_id: "admin"`). Update that document and set `adminRegistrationEnabled` to the Boolean `true`. If no settings document exists, insert one shaped like `{ "id": "admin", "adminRegistrationEnabled": true }`; Atlas will assign its ObjectId `_id`.
+2. To disable registration, edit that same document and set `adminRegistrationEnabled` to the Boolean `false`. Alternatively, delete the registration settings document; missing settings fail closed.
+3. Save the change. The registration page and registration API read MongoDB directly, so no redeployment is needed.
+
+The equivalent `mongosh` command to enable registration is:
+
+```javascript
+db.settings.updateOne(
+  { id: "admin" },
+  { $set: { adminRegistrationEnabled: true } },
+  { upsert: true }
+)
+```
+
+Change `true` to `false` to disable it. When enabling an existing legacy document keyed by string `_id`, update it using `{ _id: "admin" }` instead of the `id` filter above. Do not create an unauthenticated settings API or store administrator accounts in any institute-data collection.
+
+Generate a suitable session secret locally with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+Set the generated value as server-side `SESSION_SECRET` in `.env.local` for development and in the hosting provider's environment settings for production. Restart the development server or redeploy after changing it. The application intentionally rejects missing or shorter-than-32-character secrets rather than falling back to a hardcoded value.
 
 ## Production deployment
 
@@ -93,6 +134,7 @@ Public search and login endpoints are rate limited. For a single server, an in-m
 ## Security checklist (deployment)
 
 - [ ] Set strong `SESSION_SECRET` and rotate if compromised
+- [ ] Keep `SESSION_SECRET` at least 32 characters and configure it in every deployment environment
 - [ ] Use HTTPS in production (secure cookies)
 - [ ] Configure Upstash (or equivalent) rate limiting
 - [ ] Restrict MongoDB network access

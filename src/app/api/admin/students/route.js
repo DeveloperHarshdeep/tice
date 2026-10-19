@@ -5,7 +5,7 @@ import {
 } from "@/lib/db";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import {
   parseJsonBody,
   paginationSchema,
@@ -17,8 +17,7 @@ import { getCourseById } from "@/data/courses";
 export async function GET(request) {
   const { error } = await requireAdmin(request);
   if (error) {
-    console.warn("[api/admin/students] Unauthorized request", { status: 401 });
-    return jsonError("Unauthorized.", 401);
+    return adminAuthErrorResponse(error);
   }
 
   const { searchParams } = new URL(request.url);
@@ -91,7 +90,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   let body;
   try {

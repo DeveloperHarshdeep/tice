@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -11,14 +12,11 @@ import { siteConfig } from "@/lib/site-config";
 import {
   ShieldCheck,
   Search,
-  ExternalLink,
   Printer,
   CheckCircle2,
   Award,
   AlertTriangle,
   LockKeyhole,
-  FileCheck,
-  ArrowUpRight,
   GraduationCap,
 } from "lucide-react";
 
@@ -74,6 +72,7 @@ export function CertificateSearchForm() {
     state.type === "done" && state.data?.found
       ? state.data.certificate
       : null;
+  const certificateIsPdf = /\.pdf(?:$|[?#])/i.test(certificate?.fileUrl || "");
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 sm:space-y-8">
@@ -113,13 +112,13 @@ export function CertificateSearchForm() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center">
       <div className="min-w-0">
         <Input
-          label="Student Roll Number"
+          label="Student Roll Number or Certificate Number"
           name="rollNumber"
           value={rollNumber}
           onChange={(e) =>
             setRollNumber(e.target.value.toUpperCase())
           }
-          placeholder="e.g. TICE/2026/001"
+          placeholder="e.g. TICE/2026/001 or TICE-CERT-2026-0001"
           autoComplete="off"
           required
           className="border-slate-200 text-base transition-colors focus:border-sky-500 focus:ring-sky-500"
@@ -390,33 +389,27 @@ export function CertificateSearchForm() {
               {/* Certificate document */}
               {certificate.fileUrl && (
                 <div className="mt-6 overflow-hidden rounded-2xl border border-sky-100 bg-sky-50/50 p-4 sm:p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-white text-sky-600">
-                        <FileCheck className="h-5 w-5" />
-                      </div>
-
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-slate-900">
-                          Original Certificate
-                        </h3>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">
-                          Open the issued certificate document for viewing
-                          or printing.
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={certificate.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="no-print inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:w-auto"
-                    >
-                      View Certificate
-                      <ArrowUpRight className="h-4 w-4" />
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                  <h3 className="mb-3 text-sm font-bold text-slate-900">
+                    Issued Certificate
+                  </h3>
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    {certificateIsPdf ?
+                      <iframe
+                        src={certificate.fileUrl}
+                        title={`Issued certificate for ${certificate.studentName}`}
+                        className="h-[75vh] min-h-[30rem] w-full"
+                        loading="lazy"
+                        sandbox="allow-same-origin"
+                      />
+                    : <Image
+                        src={certificate.fileUrl}
+                        alt={`Issued certificate for ${certificate.studentName}`}
+                        width={800}
+                        height={1132}
+                        unoptimized
+                        className="mx-auto h-auto max-h-[75vh] w-full object-contain"
+                      />
+                    }
                   </div>
                 </div>
               )}

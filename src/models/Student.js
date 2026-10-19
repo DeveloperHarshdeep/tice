@@ -32,6 +32,10 @@ const StudentSchema = new mongoose.Schema(
     certificateNumber: { type: String, trim: true, uppercase: true },
     certificateCourseName: { type: String, trim: true },
     certificateIssueDate: { type: Date },
+    certificateStatus: {
+      type: String,
+      enum: ["draft", "issued", "revoked"],
+    },
 
     // Result fields (populated upon result upload or entry)
     resultUrl: { type: String, trim: true },
@@ -42,6 +46,10 @@ const StudentSchema = new mongoose.Schema(
     maxMarks: { type: Number },
     percentage: { type: Number },
     grade: { type: String, trim: true },
+    resultPublicationStatus: {
+      type: String,
+      enum: ["draft", "published"],
+    },
 
     enrollmentDate: { type: Date, default: Date.now },
     archived: { type: Boolean, default: false, index: true },

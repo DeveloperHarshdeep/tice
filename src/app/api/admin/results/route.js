@@ -2,14 +2,14 @@ import { connectDB } from "@/lib/db";
 import Result from "@/models/Result";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { paginationSchema } from "@/lib/validation";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { buildResultFields } from "@/lib/result-utils";
 
 export async function GET(request) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const { searchParams } = new URL(request.url);
   const parsed = paginationSchema.safeParse({
@@ -58,7 +58,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   let body;
   try {
@@ -120,6 +120,7 @@ export async function POST(request) {
     student.maxMarks = maxNum;
     student.percentage = computed.percentage;
     student.grade = computed.grade;
+    student.resultPublicationStatus = publicationStatus;
     await student.save();
 
     // Create or update Result document

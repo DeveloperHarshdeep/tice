@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import {
   assertCloudinaryConfigured,
   uploadBuffer,
@@ -13,7 +13,7 @@ export async function POST(request) {
   }
 
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   let formData;
   try {

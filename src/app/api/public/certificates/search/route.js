@@ -32,30 +32,23 @@ export async function POST(request) {
     // 1. Search Student by rollNumber
     const student = await Student.findOne({ rollNumber: roll, archived: false });
 
-    // 2. Check if student has an issued certificate directly on record
-    if (student && student.certificateUrl) {
-      return jsonSuccess({
-        found: true,
-        status: "verified",
-        certificate: {
-          studentName: student.fullName,
-          rollNumber: student.rollNumber,
-          courseName: student.certificateCourseName || student.courseName || "Computer Training Program",
-          issueDate: student.certificateIssueDate || student.updatedAt,
-          certificateNumber: student.certificateNumber || `TICE-CERT-${student.rollNumber}`,
-          fileUrl: student.certificateUrl,
-        },
-      });
-    }
-
-    // 3. Check Certificate collection as secondary lookup
+    // The registry status is authoritative when a certificate record exists.
     if (student) {
-      const certDoc = await Certificate.findOne({
-        student: student._id,
-        status: "issued",
-      }).sort({ issueDate: -1 });
+      const certDoc = await Certificate.findOne({ student: student._id })
+        .sort({ updatedAt: -1 })
+        .lean();
 
-      if (certDoc && certDoc.file?.url) {
+      if (certDoc) {
+        if (certDoc.status !== "issued") {
+          return jsonSuccess({
+            found: false,
+            status: certDoc.status === "revoked" ? "revoked" : "not_found",
+            message:
+              certDoc.status === "revoked" ?
+                "This certificate has been revoked."
+              : "No issued certificate found for this roll number.",
+          });
+        }
         return jsonSuccess({
           found: true,
           status: "verified",
@@ -65,7 +58,31 @@ export async function POST(request) {
             courseName: certDoc.courseName,
             issueDate: certDoc.issueDate,
             certificateNumber: certDoc.certificateNumber,
-            fileUrl: certDoc.file.url,
+            fileUrl: certDoc.file?.url || student.certificateUrl || null,
+          },
+        });
+      }
+
+      // Older certificates may exist only on the student record.
+      if (
+        student.certificateUrl &&
+        (!student.certificateStatus || student.certificateStatus === "issued")
+      ) {
+        return jsonSuccess({
+          found: true,
+          status: "verified",
+          certificate: {
+            studentName: student.fullName,
+            rollNumber: student.rollNumber,
+            courseName:
+              student.certificateCourseName ||
+              student.courseName ||
+              "Computer Training Program",
+            issueDate: student.certificateIssueDate || student.updatedAt,
+            certificateNumber:
+              student.certificateNumber ||
+              `TICE-CERT-${student.rollNumber}`,
+            fileUrl: student.certificateUrl,
           },
         });
       }

@@ -5,6 +5,7 @@ import {
   setSessionCookie,
   verifyPassword,
   hashPassword,
+  assertSessionSecretConfigured,
 } from "@/lib/auth";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
 import { parseJsonBody, loginSchema } from "@/lib/validation";
@@ -32,9 +33,24 @@ export async function POST(request) {
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
+    assertSessionSecretConfigured();
+  } catch {
+    console.error("[auth/login] Invalid session configuration", {
+      setting: "SESSION_SECRET",
+      requirement: "at_least_32_characters",
+    });
+    return jsonError(
+      "Sign-in is temporarily unavailable because the server authentication configuration is invalid.",
+      503,
+      "SESSION_CONFIGURATION_ERROR",
+    );
+  }
+
+  let stage = "database_connection";
+  try {
     await connectDB();
 
-    // Check if any administrator exists in the database
+    stage = "admin_lookup";
     const adminCount = await Admin.countDocuments();
 
     let admin = null;
@@ -56,7 +72,6 @@ export async function POST(request) {
         return jsonError("Invalid email or password.", 401);
       }
     } else {
-      // Standard authentication against MongoDB stored password hash
       admin = await Admin.findOne({ email: normalizedEmail }).select(
         "+passwordHash email name",
       );
@@ -65,20 +80,39 @@ export async function POST(request) {
         return jsonError("Invalid email or password.", 401);
       }
 
+      stage = "password_verification";
       const valid = await verifyPassword(password, admin.passwordHash);
       if (!valid) {
         return jsonError("Invalid email or password.", 401);
       }
     }
 
+    stage = "session_creation";
     const token = await createSessionToken(admin._id.toString());
+    stage = "session_cookie";
     await setSessionCookie(token);
 
     return jsonSuccess({
       admin: { id: admin._id.toString(), email: admin.email, name: admin.name },
     });
   } catch (error) {
-    console.error("Login error:", error.message);
+    console.error("[auth/login] Request failed", {
+      stage,
+      errorType: error?.name || "Error",
+      errorCode:
+        typeof error?.code === "number" ||
+        (typeof error?.code === "string" &&
+          /^[A-Z0-9_]{1,40}$/.test(error.code)) ?
+          error.code
+        : undefined,
+    });
+    if (stage === "database_connection" || stage === "admin_lookup") {
+      return jsonError(
+        "The authentication database is currently unavailable.",
+        503,
+        "DATABASE_UNAVAILABLE",
+      );
+    }
     return jsonError("Unable to sign in right now. Please verify database connectivity.", 500);
   }
 }

@@ -3,7 +3,7 @@ import Student from "@/models/Student";
 import Certificate from "@/models/Certificate";
 import Result from "@/models/Result";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary";
@@ -16,7 +16,7 @@ async function getIdParams(params) {
 
 export async function GET(request, { params }) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid student ID.", 400);
@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid student ID.", 400);
@@ -85,7 +85,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid student ID.", 400);

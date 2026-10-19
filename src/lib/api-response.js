@@ -10,3 +10,10 @@ export function jsonError(message, status = 400, code) {
     { status },
   );
 }
+
+export function adminAuthErrorResponse(error) {
+  if (error === "unavailable") {
+    return jsonError("Authentication service is unavailable.", 503);
+  }
+  return jsonError("Unauthorized.", 401);
+}

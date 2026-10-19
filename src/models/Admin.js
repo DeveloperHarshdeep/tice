@@ -10,7 +10,7 @@ const AdminSchema = new mongoose.Schema(
       trim: true,
     },
     passwordHash: { type: String, required: true, select: false },
-    name: { type: String, default: "Administrator" },
+    name: { type: String, required: true, trim: true, maxlength: 120, default: "Administrator" },
   },
   { timestamps: true },
 );

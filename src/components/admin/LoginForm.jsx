@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
+import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
 import {
   GraduationCap,
@@ -142,6 +143,13 @@ export function LoginForm() {
           )}
         </Button>
       </form>
+
+      <p className="mt-4 text-center text-xs text-slate-500">
+        Need an administrator account?{" "}
+        <Link href="/admin/register" className="font-semibold text-brand hover:underline">
+          Register
+        </Link>
+      </p>
 
       <div className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
         <span className="inline-flex items-center gap-1">

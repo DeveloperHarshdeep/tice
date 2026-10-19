@@ -1,7 +1,8 @@
 import { connectDB } from "@/lib/db";
 import Certificate from "@/models/Certificate";
+import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { parseJsonBody, certificateUpdateSchema } from "@/lib/validation";
 import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
@@ -14,7 +15,7 @@ async function getIdParams(params) {
 
 export async function GET(request, { params }) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid certificate ID.", 400);
@@ -37,7 +38,7 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid certificate ID.", 400);
@@ -78,6 +79,12 @@ export async function PATCH(request, { params }) {
       { new: true, runValidators: true },
     );
     if (!certificate) return jsonError("Certificate not found.", 404);
+    if (certificate.student) {
+      await Student.updateOne(
+        { _id: certificate.student },
+        { $set: { certificateStatus: certificate.status } },
+      );
+    }
     return jsonSuccess({ certificate });
   } catch (err) {
     if (err.code === 11000) {
@@ -91,7 +98,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid certificate ID.", 400);
@@ -119,6 +126,10 @@ export async function DELETE(request, { params }) {
     }
 
     await Certificate.deleteOne({ _id: id });
+    await Student.updateOne(
+      { _id: certificate.student },
+      { $set: { certificateStatus: "draft" } },
+    );
     return jsonSuccess({ deleted: true });
   } catch (err) {
     console.error("Delete certificate:", err.message);

@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/db";
 import Certificate from "@/models/Certificate";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
-import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { paginationSchema } from "@/lib/validation";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { uploadGeneratedCertificate } from "@/lib/certificate-generator";
@@ -10,7 +10,7 @@ import { normalizeCertificateNumber } from "@/lib/normalize";
 
 export async function GET(request) {
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   const { searchParams } = new URL(request.url);
   const parsed = paginationSchema.safeParse({
@@ -54,7 +54,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!verifySameOrigin(request)) return jsonError("Invalid request origin.", 403);
   const { error } = await requireAdmin(request);
-  if (error) return jsonError("Unauthorized.", 401);
+  if (error) return adminAuthErrorResponse(error);
 
   let body;
   try {
@@ -138,6 +138,7 @@ export async function POST(request) {
     student.certificateNumber = normalizedCertNo;
     student.certificateCourseName = courseName.trim();
     student.certificateIssueDate = certDate;
+    student.certificateStatus = status || "issued";
     await student.save();
 
     // Create or update Certificate collection entry
