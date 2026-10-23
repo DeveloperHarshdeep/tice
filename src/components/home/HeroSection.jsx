@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
+import { siteConfig } from "@/lib/site-config";
 
 export function HeroSection() {
   const [photoUnavailable, setPhotoUnavailable] = useState(false);
@@ -31,16 +32,17 @@ export function HeroSection() {
           </div>
 
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-[1.15]">
-            Structured computer education engineered for{" "}
+            Computer Institute in Ludhiana for{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#0891b2]">
-              real workplace capability.
+              practical computer education.
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-            TICE delivers hands-on, lab-oriented training in modern office software,
-            financial accounting with TallyPrime GST, web design, and programming
-            foundations — backed by an official online credential verification portal.
+            Talent Institute &amp; Computer Education (TICE) has {siteConfig.experienceYears} years of
+            institutional experience in Ludhiana, Punjab. Mr. Sandeep Kumar teaches
+            practical courses in data analysis, web designing, Tally Prime with GST,
+            Python, Excel, graphic design, video editing, and AI tools.
           </p>
 
           {/* CTA Action Buttons */}

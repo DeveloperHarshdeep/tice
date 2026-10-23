@@ -7,15 +7,18 @@ import { siteImages } from "@/data/images";
 import { ShieldCheck, Lock, CheckCircle2, Award, Search, KeyRound } from "lucide-react";
 
 export const metadata = {
-  title: "Certificate Verification",
-  description: `Verify authentic computer course certificates issued by ${siteConfig.name} (TICE) using the unique certificate serial or candidate roll number.`,
+  title: "Online Certificate Verification",
+  description: `Verify a ${siteConfig.name} computer course certificate by its serial number or the candidate's roll number.`,
   alternates: {
     canonical: `${getMetadataBase().origin}/certificate-verification`,
   },
   openGraph: {
-    title: `Certificate Verification | ${siteConfig.name}`,
-    description: `Verify authentic computer course certificates issued by ${siteConfig.name}.`,
+    title: `TICE Certificate Verification | ${siteConfig.name}`,
+    description: `Check a ${siteConfig.name} computer course certificate using its serial number or candidate roll number.`,
     url: `${getMetadataBase().origin}/certificate-verification`,
+    siteName: siteConfig.name,
+    locale: "en_IN",
+    type: "website",
   },
 };
 

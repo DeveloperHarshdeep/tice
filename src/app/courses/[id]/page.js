@@ -44,10 +44,12 @@ export async function generateMetadata({ params }) {
 
   const base = getMetadataBase().origin;
   const canonicalUrl = `${base}/courses/${course.id}`;
+  const pageTitle = `${course.title} in Ludhiana`;
+  const pageDescription = `Explore ${course.title} at TICE in Ludhiana. View the syllabus, duration, level, prerequisites and course enquiry details.`;
 
   return {
-    title: `${course.title} Syllabus & Training`,
-    description: course.description,
+    title: pageTitle,
+    description: pageDescription,
     alternates: {
       canonical: canonicalUrl,
     },
@@ -55,14 +57,14 @@ export async function generateMetadata({ params }) {
       type: "website",
       locale: "en_IN",
       url: canonicalUrl,
-      title: `${course.title} | ${siteConfig.name}`,
-      description: course.description,
+      title: `${pageTitle} | ${siteConfig.shortName}`,
+      description: pageDescription,
       siteName: siteConfig.name,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${course.title} | ${siteConfig.shortName}`,
-      description: course.description,
+      title: `${pageTitle} | ${siteConfig.shortName}`,
+      description: pageDescription,
     },
   };
 }
@@ -141,6 +143,7 @@ export default async function CourseDetailPage({ params }) {
     "@type": "Course",
     name: course.title,
     description: course.description,
+    url: `${base}/courses/${course.id}`,
     provider: {
       "@type": "EducationalOrganization",
       name: siteConfig.name,
@@ -149,11 +152,6 @@ export default async function CourseDetailPage({ params }) {
     timeRequired: course.durationHours || course.duration,
     educationalLevel: course.level,
     courseCode: course.id,
-    hasCourseInstance: {
-      "@type": "CourseInstance",
-      courseMode: "blended",
-      courseWorkload: course.duration,
-    },
   };
 
   return (
