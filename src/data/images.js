@@ -1,7 +1,6 @@
 /**
- * Curated, high-resolution photography assets for Talent Institute & Computer Education (TICE).
- * All URLs are verified, legal Unsplash photography depicting authentic students, modern computer labs,
- * mentors, coding sessions, financial accounting, and educational training environments.
+ * Image assets for Talent Institute & Computer Education (TICE).
+ * Where available, the project uses actual institute photography from /public/images.
  */
 
 export const siteImages = {
@@ -107,32 +106,32 @@ export const siteImages = {
   // About Page Photography
   about: {
     banner: {
-      url: "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1600&q=85",
-      alt: "Talent Institute campus facility and computer education center",
+      url: "/images/institute.webp",
+      alt: "Exterior view of Talent Institute & Computer Education in Ludhiana",
       width: 1600,
       height: 900,
     },
     mission: {
-      url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80",
-      alt: "Students actively engaged in computer practicals at TICE",
+      url: "/images/institute.webp",
+      alt: "Exterior view of Talent Institute & Computer Education in Ludhiana",
       width: 1200,
       height: 800,
     },
     lab: {
-      url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1200&q=80",
-      alt: "Modern computer lab layout with individualized high-performance systems",
+      url: "/images/institute-inner.webp",
+      alt: "Interior classroom and computer learning environment at Talent Institute & Computer Education",
       width: 1200,
       height: 800,
     },
     faculty1: {
-      url: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=600&q=80",
-      alt: "Senior IT instructor portrait",
+      url: "/images/teacher.jpeg",
+      alt: "Mr. Sandeep Kumar, computer education teacher and instructor at Talent Institute & Computer Education",
       width: 600,
       height: 600,
     },
     faculty2: {
-      url: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80",
-      alt: "Financial accounting and software trainer portrait",
+      url: "/images/institute-inner.webp",
+      alt: "Interior of the institute showing the learning environment and computer lab",
       width: 600,
       height: 600,
     },

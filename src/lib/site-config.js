@@ -5,6 +5,12 @@ export const siteConfig = {
   tagline: "Practical computer education for today's digital workplace.",
   experienceYears: 20,
   instructor: "Mr. Sandeep Kumar",
+  teacher: {
+    name: "Mr. Sandeep Kumar",
+    qualification: "B.Com",
+    experience: "10 Years of Teaching Experience",
+    role: "Computer Education Teacher / Instructor",
+  },
   contact: {
     address: "Gurmail Park, St. 1, Tibba Road, Near Joga Industry / Satsang Ghar, Ramesh Nagar, Ludhiana, Punjab 141008",
     phone: "918195955650",

@@ -53,7 +53,7 @@ export default function AboutPage() {
     <PublicShell>
       <PageHeader
         title={`About ${siteConfig.name}`}
-        subtitle={`${siteConfig.name} (TICE) is a computer education institute in Ludhiana, Punjab, with ${siteConfig.experienceYears} years of institutional experience. ${siteConfig.instructor} teaches practical computer courses for learners building their skills.`}
+        subtitle={`${siteConfig.name} (TICE) is a computer education institute in Ludhiana, Punjab, with ${siteConfig.experienceYears} years of institutional experience. ${siteConfig.teacher.name} brings ${siteConfig.teacher.qualification} qualifications and ${siteConfig.teacher.experience} to practical computer education.`}
         badgeText="Institute Overview"
         badgeTone="sky"
         breadcrumbs={[{ label: "About" }]}
@@ -385,22 +385,36 @@ export default function AboutPage() {
               Faculty & Instructors
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Computer courses at TICE are taught by {siteConfig.instructor}.
+              Computer courses at TICE are taught by {siteConfig.teacher.name},
+              bringing a {siteConfig.teacher.qualification} background and {siteConfig.teacher.experience} to classroom guidance.
             </p>
           </div>
 
-          <div className="grid max-w-2xl gap-8">
+          <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-center">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-sky-100 bg-sky-50 shadow-sm">
+              <Image
+                src={siteImages.about.faculty1.url}
+                alt={siteImages.about.faculty1.alt}
+                fill
+                sizes="(max-width: 1024px) 100vw, 280px"
+                className="object-cover"
+              />
+            </div>
+
             <Card className="border-sky-100 bg-white p-6 shadow-xs">
               <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-800">
                 Teacher &amp; Instructor
               </span>
               <h3 className="mt-3 text-base font-bold text-slate-900">
-                {siteConfig.instructor}
+                {siteConfig.teacher.name}
               </h3>
+              <p className="mt-2 text-sm font-semibold text-[#0284c7]">
+                {siteConfig.teacher.qualification} | {siteConfig.teacher.experience}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {siteConfig.instructor} teaches at Talent Institute &amp;
-                Computer Education. Course topics, prerequisites and
-                durations are listed on the individual course pages.
+                With a {siteConfig.teacher.qualification} qualification and {siteConfig.teacher.experience},
+                {" "}{siteConfig.teacher.name} focuses on practical computer education that helps students build
+                valuable skills for academic and professional growth.
               </p>
               <Button
                 href="/courses"
