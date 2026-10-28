@@ -22,42 +22,20 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "About the Institute",
-  description: `Learn about ${siteConfig.name} (TICE), our educational approach, computer lab facilities, official certificate, and faculty.`,
+  title: "About the Institute in Ludhiana",
+  description: `${siteConfig.name} (TICE) has ${siteConfig.experienceYears} years of institutional experience in Ludhiana. Learn about its teaching approach and instructor.`,
   alternates: {
     canonical: `${getMetadataBase().origin}/about`,
   },
   openGraph: {
-    title: `About ${siteConfig.name}`,
-    description: `Learn about ${siteConfig.name}, our educational approach, computer lab facilities, and faculty.`,
+    title: `About TICE | Computer Education in Ludhiana`,
+    description: `Meet ${siteConfig.instructor} and learn about ${siteConfig.name}'s practical computer education in Ludhiana and ${siteConfig.experienceYears} years of institutional experience.`,
     url: `${getMetadataBase().origin}/about`,
+    siteName: siteConfig.name,
+    locale: "en_IN",
+    type: "website",
   },
 };
-
-const facultyProfiles = [
-  {
-    name: "Senior Computer Instructor",
-    role: "Computer Foundations & Office Applications",
-    bio: "Specialist in typing speed development, Windows operating systems, and advanced Microsoft Office productivity workflows. Focuses on individual student pacing and lab troubleshooting.",
-    specialties: [
-      "MS Word & Formatting",
-      "Advanced Excel & Spreadsheets",
-      "Typing Fluency",
-    ],
-    image: siteImages.about.faculty1,
-  },
-  {
-    name: "Financial Software Trainer",
-    role: "Financial Accounting & Business Taxation",
-    bio: "Practitioner with extensive experience in double-entry bookkeeping, TallyPrime ERP, and practical GST return workflows. Guides students through real company transaction simulation.",
-    specialties: [
-      "TallyPrime ERP",
-      "GST Invoicing & Returns",
-      "Inventory & Vouchers",
-    ],
-    image: siteImages.about.faculty2,
-  },
-];
 
 const officialCertificates = [
   {
@@ -74,8 +52,8 @@ export default function AboutPage() {
   return (
     <PublicShell>
       <PageHeader
-        title={`About ${siteConfig.shortName}`}
-        subtitle={`${siteConfig.name} (TICE) is dedicated to delivering structured, practical computer training that builds certified, workplace-ready digital competence.`}
+        title={`About ${siteConfig.name}`}
+        subtitle={`${siteConfig.name} (TICE) is a computer education institute in Ludhiana, Punjab, with ${siteConfig.experienceYears} years of institutional experience. ${siteConfig.teacher.name} brings ${siteConfig.teacher.qualification} qualifications and ${siteConfig.teacher.experience} to practical computer education.`}
         badgeText="Institute Overview"
         badgeTone="sky"
         breadcrumbs={[{ label: "About" }]}
@@ -118,10 +96,11 @@ export default function AboutPage() {
               </p>
 
               <p className="text-sm leading-relaxed text-slate-600">
-                Talent Institute was founded to make this training structured,
-                accessible, and rigorously evaluated. We replace passive
-                lectures with hands-on practice, ensuring that every concept
-                learned is immediately executed on an individual computer.
+                For two decades, Talent Institute &amp; Computer Education has
+                provided computer education in Ludhiana. The institute focuses
+                on structured learning and practical computer use, with
+                coursework ranging from office applications and accounting
+                software to programming and design.
               </p>
 
               <div className="pt-2">
@@ -406,60 +385,47 @@ export default function AboutPage() {
               Faculty & Instructors
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Experienced instructors providing hands-on coaching and
-              individual doubt resolution.
+              Computer courses at TICE are taught by {siteConfig.teacher.name},
+              bringing a {siteConfig.teacher.qualification} background and {siteConfig.teacher.experience} to classroom guidance.
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2">
-            {facultyProfiles.map((faculty) => (
-              <Card
-                key={faculty.role}
-                hoverLift
-                className="group overflow-hidden border-sky-100 bg-white shadow-xs"
+          <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-center">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-sky-100 bg-sky-50 shadow-sm">
+              <Image
+                src={siteImages.about.faculty1.url}
+                alt={siteImages.about.faculty1.alt}
+                fill
+                sizes="(max-width: 1024px) 100vw, 280px"
+                className="object-cover"
+              />
+            </div>
+
+            <Card className="border-sky-100 bg-white p-6 shadow-xs">
+              <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-800">
+                Teacher &amp; Instructor
+              </span>
+              <h3 className="mt-3 text-base font-bold text-slate-900">
+                {siteConfig.teacher.name}
+              </h3>
+              <p className="mt-2 text-sm font-semibold text-[#0284c7]">
+                {siteConfig.teacher.qualification} | {siteConfig.teacher.experience}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                With a {siteConfig.teacher.qualification} qualification and {siteConfig.teacher.experience},
+                {" "}{siteConfig.teacher.name} focuses on practical computer education that helps students build
+                valuable skills for academic and professional growth.
+              </p>
+              <Button
+                href="/courses"
+                variant="secondary"
+                size="sm"
+                className="mt-5"
               >
-                <div className="flex flex-col sm:flex-row">
-                  <div className="relative aspect-square shrink-0 overflow-hidden bg-slate-100 sm:w-48">
-                    <Image
-                      src={faculty.image.url}
-                      alt={faculty.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 200px"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-
-                  <div className="flex flex-1 flex-col justify-between p-6">
-                    <div>
-                      <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-800">
-                        Faculty
-                      </span>
-
-                      <h3 className="mt-2 text-base font-bold text-slate-900">
-                        {faculty.name}
-                      </h3>
-                      <p className="mt-0.5 text-xs font-semibold text-[#0284c7]">
-                        {faculty.role}
-                      </p>
-                      <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                        {faculty.bio}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
-                      {faculty.specialties.map((specialty) => (
-                        <span
-                          key={specialty}
-                          className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
-                        >
-                          {specialty}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                View computer courses
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Button>
+            </Card>
           </div>
         </section>
 

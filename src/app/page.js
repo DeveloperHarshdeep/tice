@@ -27,14 +27,14 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Talent Institute & Computer Education | Practical IT & Software Training",
-  description: `${siteConfig.name} (TICE) offers structured training in computer fundamentals, Tally with GST, web development, Python, and DCA. Official online certificate verification and published examination results.`,
+  title: "Computer Institute in Ludhiana | TICE",
+  description: `${siteConfig.name} (TICE) offers computer courses in Ludhiana with ${siteConfig.experienceYears} years' experience. Explore courses and contact the institute.`,
   alternates: {
     canonical: `${getMetadataBase().origin}`,
   },
   openGraph: {
-    title: `${siteConfig.name} - Practical Computer Education`,
-    description: `${siteConfig.name} offers structured computer training in office applications, Tally accounting, and development.`,
+    title: `Computer Institute in Ludhiana | ${siteConfig.shortName}`,
+    description: `Practical computer courses in Ludhiana from ${siteConfig.name} (TICE), an institute with ${siteConfig.experienceYears} years of experience.`,
     url: `${getMetadataBase().origin}`,
     siteName: siteConfig.name,
     locale: "en_IN",
@@ -51,7 +51,7 @@ export default function HomePage() {
     name: siteConfig.name,
     alternateName: "TICE",
     url: base,
-    description: siteConfig.tagline,
+    description: `${siteConfig.name} provides computer education in Ludhiana and has ${siteConfig.experienceYears} years of institutional experience.`,
     telephone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
     address: {
@@ -65,22 +65,9 @@ export default function HomePage() {
     },
   };
 
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: siteConfig.name,
-    url: base,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${base}/courses?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  };
-
   return (
     <PublicShell>
       <JsonLd data={organizationSchema} />
-      <JsonLd data={websiteSchema} />
 
       {/* 1. VISUALLY COMPELLING HERO WITH REAL PHOTOGRAPHY & MOTION */}
       <HeroSection />
@@ -184,6 +171,150 @@ export default function HomePage() {
       >
         <Container>
           <HomeCoursesCarousel />
+
+      {/* Modern Circular Student Showcase */}
+      <section
+        className="relative overflow-hidden bg-gradient-to-b from-white via-sky-50/60 to-white py-16 sm:py-20 lg:py-24"
+        aria-label="TICE student gallery"
+      >
+        {/* Subtle background accents */}
+        <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-sky-100/60 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 bottom-0 h-56 w-56 rounded-full bg-cyan-100/50 blur-3xl" />
+
+        <Container>
+          <div className="relative grid items-center gap-12 lg:grid-cols-2 lg:gap-8">
+            {/* Text area */}
+            <div className="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-sky-500" />
+                Life at TICE
+              </span>
+
+              <h2 className="mt-6 text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl">
+                A community built
+                <span className="mt-1 block bg-gradient-to-r from-sky-600 to-cyan-500 bg-clip-text text-transparent">
+                  to help you grow.
+                </span>
+              </h2>
+
+              <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-600 lg:mx-0">
+                Every learning journey is different. Get a glimpse of the
+                students who make our learning community special.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <span className="rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                  Practical Learning
+                </span>
+                <span className="rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                  Student Community
+                </span>
+              </div>
+            </div>
+
+            {/* Circular photo composition */}
+            <div className="relative mx-auto w-full max-w-[560px]">
+              {/* Decorative circles */}
+              <div className="pointer-events-none absolute left-[8%] top-[12%] h-5 w-5 rounded-full bg-sky-200" />
+              <div className="pointer-events-none absolute right-[7%] top-[35%] h-3 w-3 rounded-full bg-cyan-300" />
+              <div className="pointer-events-none absolute bottom-[5%] left-[42%] h-7 w-7 rounded-full bg-sky-100" />
+
+              <div className="grid grid-cols-6 items-center gap-x-3 gap-y-5 sm:gap-x-5 sm:gap-y-7">
+                {/* Featured circle */}
+                <div className="col-span-3 col-start-2 row-span-2">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-[0_12px_40px_rgba(14,165,233,0.16)] ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student1.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 45vw, 260px"
+                        className="object-cover transition-transform duration-700 hover:scale-105"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upper-right circle */}
+                <div className="col-span-2 col-start-5 row-start-1 mt-5">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student2.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 30vw, 170px"
+                        className="object-cover transition-transform duration-700 hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lower-left circle */}
+                <div className="col-span-2 col-start-1 row-start-3 -mt-2 sm:mt-0">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student4.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 30vw, 170px"
+                        className="object-cover transition-transform duration-700 hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lower-middle circle */}
+                <div className="col-span-2 col-start-3 row-start-3 mt-4 sm:mt-7">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student5.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 30vw, 170px"
+                        className="object-cover transition-transform duration-700 hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upper-middle/right circle */}
+                <div className="col-span-2 col-start-5 row-start-2 -mt-1">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student3.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 30vw, 170px"
+                        className="object-cover transition-transform duration-700 hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sixth circle */}
+                <div className="col-span-2 col-start-5 row-start-3 -mt-1">
+                  <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
+                    <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
+                      <Image
+                        src="/student-images/student6.jpeg"
+                        alt="TICE student"
+                        fill
+                        sizes="(max-width: 640px) 30vw, 170px"
+                        className="object-cover transition-transform duration-700 hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
         </Container>
       </section>
       {/* 4. DIGITAL VERIFICATION & EXAMINATION SPOTLIGHT */}

@@ -18,22 +18,25 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Contact & Admissions",
-  description: `Contact ${siteConfig.name} (TICE) for course admissions, batch schedules, syllabus, and computer training enquiries.`,
+  title: "Computer Course Admissions in Ludhiana",
+  description: `Contact ${siteConfig.name} in Ludhiana about computer courses and admissions. Find the institute's address, phone and email.`,
   alternates: {
     canonical: `${getMetadataBase().origin}/contact`,
   },
   openGraph: {
-    title: `Contact & Admissions | ${siteConfig.name}`,
-    description: `Contact ${siteConfig.name} for course admissions, batch schedules, and training enquiries.`,
+    title: `Contact TICE | Computer Course Enquiries in Ludhiana`,
+    description: `Get in touch with ${siteConfig.name} in Ludhiana about current computer courses and admissions using the contact details on this page.`,
     url: `${getMetadataBase().origin}/contact`,
+    siteName: siteConfig.name,
+    locale: "en_IN",
+    type: "website",
   },
 };
 
 const faqs = [
   {
     q: "What batch timings are offered for students and working professionals?",
-    a: "We schedule multiple daily batches across morning, afternoon, and evening slots. Dedicated weekend intensive batches are also conducted for working professionals.",
+    a: `The listed institute hours are ${siteConfig.contact.hours}. Contact TICE to confirm the current batch availability for your course.`,
   },
   {
     q: "Do learners get 1:1 computer access throughout the course?",
@@ -41,11 +44,11 @@ const faqs = [
   },
   {
     q: "How does the online certificate verification work after completion?",
-    a: "Upon completing syllabus modules and passing the practical evaluation, an institutional certificate is issued with an encrypted serial number that employers can verify on our website.",
+    a: "Use the certificate serial number or candidate roll number on the certificate verification page to check an issued certificate record.",
   },
   {
-    q: "Are absolute beginners or school students eligible to enroll?",
-    a: "Yes. Our foundational programs (such as Basic Computer Course and DCA) assume no previous computer or programming background.",
+    q: "How can I check course eligibility?",
+    a: "Course prerequisites and intended learner details are listed on each course page. Contact the institute if you need help choosing a suitable course.",
   },
 ];
 
@@ -56,9 +59,9 @@ export default async function ContactPage({ searchParams }) {
   return (
     <PublicShell>
       <PageHeader
-        title="Contact & Admissions Desk"
-        subtitle="Have questions regarding course curriculum, lab facilities, batch timings, or fee schedules? Reach out to our academic counselling team."
-        badgeText="Admissions Open"
+        title="Contact TICE in Ludhiana"
+        subtitle={`Contact ${siteConfig.name} about computer course details, admissions and current batch timings. The institute is in Ludhiana, Punjab.`}
+        badgeText="Course Enquiries"
         badgeTone="sky"
         breadcrumbs={[{ label: "Contact Us" }]}
         image={siteImages.contact.banner}

@@ -8,14 +8,17 @@ import { ShieldCheck, Search, Info, HelpCircle, FileCheck2, Award } from "lucide
 
 export const metadata = {
   title: "Student Examination Results",
-  description: `Search and verify published student examination results by roll number at ${siteConfig.name} (TICE).`,
+  description: `Search published ${siteConfig.name} examination results by student roll number. Follow the on-page instructions to look up your result.`,
   alternates: {
     canonical: `${getMetadataBase().origin}/results`,
   },
   openGraph: {
-    title: `Student Results Portal | ${siteConfig.name}`,
-    description: `Search and verify published student examination results by roll number at ${siteConfig.name}.`,
+    title: `TICE Student Examination Results | ${siteConfig.name}`,
+    description: `Search published student examination results from ${siteConfig.name} using the assigned roll number.`,
     url: `${getMetadataBase().origin}/results`,
+    siteName: siteConfig.name,
+    locale: "en_IN",
+    type: "website",
   },
 };
 
