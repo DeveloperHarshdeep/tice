@@ -5,6 +5,12 @@ import { jsonError, jsonSuccess } from "@/lib/api-response";
 import { normalizeRollNumber } from "@/lib/normalize";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCourseById } from "@/data/courses";
+import { toPublicResult } from "@/lib/result-utils";
+import {
+  calculateGrade,
+  calculatePassStatus,
+  calculatePercentage,
+} from "@/lib/grading";
 
 export async function POST(request) {
   const ip = getClientIp(request);
@@ -22,7 +28,7 @@ export async function POST(request) {
 
   const query = body.rollNumber || body.query;
   if (!query || typeof query !== "string" || query.trim().length < 2) {
-    return jsonError("Please enter a valid student roll number.", 400);
+    return jsonError("Please enter a valid student registration number.", 400);
   }
 
   const rollNumber = normalizeRollNumber(query);
@@ -34,65 +40,100 @@ export async function POST(request) {
     if (!student) {
       return jsonSuccess({
         found: false,
-        message: "No result found for this roll number.",
+        message: "No result found for this registration number.",
       });
     }
 
-    const latestResult = await Result.findOne({ student: student._id })
-      .sort({ updatedAt: -1 })
+    const resultDocs = await Result.find({
+      student: student._id,
+      publicationStatus: "published",
+    })
+      .sort({ resultDate: -1, createdAt: -1 })
       .lean();
-    const resultDoc =
-      latestResult?.publicationStatus === "published" ? latestResult : null;
+
+    if (resultDocs.length > 0) {
+      const results = resultDocs.map((resultDoc) =>
+        toPublicResult(resultDoc, student),
+      );
+      return jsonSuccess({
+        found: true,
+        student: {
+          studentName: student.fullName,
+          fatherName: student.fatherName,
+          rollNumber: student.rollNumber,
+        },
+        results,
+        result: results[0],
+      });
+    }
 
     if (
-      !resultDoc &&
-      (latestResult ||
-        student.resultPublicationStatus === "draft" ||
-        !student.resultUrl)
+      student.resultPublicationStatus === "draft" ||
+      (student.resultUrl == null &&
+        student.marksObtained == null &&
+        student.percentage == null)
     ) {
       return jsonSuccess({
         found: false,
-        message: "No result found for this roll number.",
+        message: "No result found for this registration number.",
       });
     }
 
     const course = getCourseById(student.courseId);
     const courseTitle = student.courseName || course?.title || student.courseId || "Computer Training Course";
 
-    const marksObtained = resultDoc?.marksObtained ?? student.marksObtained;
-    const maxMarks = resultDoc?.maxMarks ?? student.maxMarks ?? 100;
-    const percentage =
-      resultDoc?.percentage ??
-      student.percentage ??
-      (marksObtained !== undefined && marksObtained !== null ?
-        Math.round((marksObtained / maxMarks) * 100)
-      : null);
-    const grade =
-      resultDoc?.grade ??
-      student.grade ??
-      (percentage !== null ?
-        percentage >= 80 ? "A+"
-        : percentage >= 70 ? "A"
-        : percentage >= 60 ? "B"
-        : percentage >= 50 ? "C"
-        : "D"
-      : null);
+    const marksObtained = student.marksObtained;
+    const maxMarks = student.maxMarks || 100;
+    const hasMarks =
+      Number.isFinite(marksObtained) &&
+      Number.isFinite(maxMarks) &&
+      maxMarks > 0 &&
+      marksObtained >= 0 &&
+      marksObtained <= maxMarks;
+    const percentage = hasMarks
+      ? calculatePercentage(marksObtained, maxMarks)
+      : null;
+    const passingPercentage = Number.isFinite(student.passingPercentage)
+      ? student.passingPercentage
+      : null;
+    const passStatus =
+      student.passStatus ||
+      (percentage !== null && passingPercentage !== null
+        ? calculatePassStatus(
+            (marksObtained / maxMarks) * 100,
+            passingPercentage,
+          )
+        : null);
+    const legacyResult = {
+      studentName: student.fullName,
+      fatherName: student.fatherName,
+      rollNumber: student.rollNumber,
+      courseName: courseTitle,
+      examName: student.examName || "Final Practical Examination",
+      resultDate: student.resultDate || student.updatedAt,
+      publishedAt: student.updatedAt,
+      resultUrl: student.resultUrl || null,
+      marksObtained: hasMarks ? marksObtained : null,
+      maxMarks: hasMarks ? maxMarks : null,
+      percentage,
+      passingPercentage,
+      grade:
+        student.grade ||
+        (percentage !== null && passingPercentage !== null
+          ? calculateGrade(percentage, passingPercentage)
+          : null),
+      passStatus,
+    };
 
     return jsonSuccess({
       found: true,
-      result: {
+      student: {
         studentName: student.fullName,
+        fatherName: student.fatherName,
         rollNumber: student.rollNumber,
-        courseName: courseTitle,
-        examName: student.examName || "Final Practical Examination",
-        resultDate: student.resultDate || resultDoc?.publishedAt || student.updatedAt,
-        resultUrl: student.resultUrl || null,
-        marksObtained,
-        maxMarks,
-        percentage,
-        grade,
-        passStatus: percentage !== null ? (percentage >= 40 ? "pass" : "fail") : "pass",
       },
+      results: [legacyResult],
+      result: legacyResult,
     });
   } catch (error) {
     console.error("Result search error:", error.message);

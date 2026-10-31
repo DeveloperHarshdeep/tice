@@ -7,7 +7,6 @@ import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
 import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import {
-  parseJsonBody,
   paginationSchema,
   studentCreateSchema,
 } from "@/lib/validation";
@@ -106,8 +105,11 @@ export async function POST(request) {
   }
 
   const payload = parsed.data;
-  const courseInfo = getCourseById(payload.courseId);
-  const courseName = payload.courseName || courseInfo?.title || payload.courseId || "Basic Computer Course";
+  const courseName =
+    payload.courseName?.trim() || getCourseById(payload.courseId)?.title || "";
+  if (courseName.length < 2) {
+    return jsonError("Enter a course name with at least 2 characters.", 400);
+  }
 
   try {
     await connectDB();

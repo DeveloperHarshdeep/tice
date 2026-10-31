@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { normalizeCertificateNumber, normalizeRollNumber } from "./normalize";
+import { normalizeRollNumber } from "./normalize";
+
+const numberInput = (schema) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    schema,
+  );
 
 export const loginSchema = z.object({
   email: z.string().email().max(255),
@@ -46,7 +53,7 @@ export const studentCreateSchema = z.object({
     .min(7, "Contact number must have at least 7 digits")
     .max(20, "Contact number too long"),
   courseId: z.string().trim().min(1).max(64).optional(),
-  courseName: z.string().trim().max(160).optional(),
+  courseName: z.string().trim().min(2).max(160).optional(),
   enrollmentDate: z.coerce.date().optional(),
 });
 
@@ -67,28 +74,21 @@ export const studentUpdateSchema = studentCreateSchema.partial().extend({
 export const certificateCreateSchema = z.object({
   studentId: z.string().optional(),
   rollNumber: z.string().trim().min(2).max(64).optional(),
-  certificateNumber: z
-    .string()
-    .trim()
-    .min(3)
-    .max(64)
-    .transform(normalizeCertificateNumber)
-    .optional(),
-  courseName: z.string().trim().min(2).max(160),
+  courseId: z.string().trim().min(1).max(64).optional(),
+  courseName: z.string().trim().min(2).max(160).optional(),
   issueDate: z.coerce.date().optional(),
   status: z.enum(["draft", "issued", "revoked"]).default("issued"),
-  fileUrl: z.string().optional(),
-  publicId: z.string().optional(),
+  reissue: z.boolean().optional().default(false),
+  file: z
+    .object({
+      url: z.string().url(),
+      publicId: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const certificateUpdateSchema = z.object({
-  certificateNumber: z
-    .string()
-    .trim()
-    .min(3)
-    .max(64)
-    .transform(normalizeCertificateNumber)
-    .optional(),
+  courseId: z.string().trim().min(1).max(64).optional(),
   courseName: z.string().trim().min(2).max(160).optional(),
   issueDate: z.coerce.date().optional(),
   status: z.enum(["draft", "issued", "revoked"]).optional(),
@@ -98,12 +98,18 @@ export const certificateUpdateSchema = z.object({
 export const resultCreateSchema = z.object({
   studentId: z.string().optional(),
   rollNumber: z.string().trim().min(2).max(64).optional(),
-  examName: z.string().trim().max(160).optional(),
+  courseId: z.string().trim().min(1).max(64).optional(),
+  courseName: z.string().trim().min(2).max(160).optional(),
+  examName: z.string().trim().min(1).max(160),
   resultDate: z.coerce.date().optional(),
-  resultUrl: z.string().optional(),
+  resultUrl: z.string().url().optional(),
   resultPublicId: z.string().optional(),
-  marksObtained: z.coerce.number().min(0).optional(),
-  maxMarks: z.coerce.number().min(1).optional(),
+  marksObtained: numberInput(z.coerce.number().finite().min(0)),
+  maxMarks: numberInput(z.coerce.number().finite().min(1)),
+  passingPercentage: numberInput(
+    z.coerce.number().finite().min(0).max(100),
+  ),
+  grade: z.string().trim().max(24).optional(),
   publicationStatus: z.enum(["draft", "published"]).default("published"),
   showPhotoPublicly: z.boolean().optional().default(false),
 });
