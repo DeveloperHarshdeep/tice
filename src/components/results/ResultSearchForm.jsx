@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -36,7 +37,7 @@ export function ResultSearchForm() {
     if (trimmed.length < 2) {
       setState({
         type: "error",
-        message: "Please enter a valid student roll number.",
+        message: "Please enter a valid student registration number.",
       });
       return;
     }
@@ -54,7 +55,7 @@ export function ResultSearchForm() {
           type: "error",
           message:
             json.error?.message ||
-            "Could not fetch examination result. Please verify the roll number.",
+            "Could not fetch examination results. Please verify the registration number.",
         });
         return;
       }
@@ -68,7 +69,10 @@ export function ResultSearchForm() {
     }
   }
 
-  const result = state.type === "done" && state.data.found ? state.data.result : null;
+  const results =
+    state.type === "done" && state.data.found
+      ? state.data.results || (state.data.result ? [state.data.result] : [])
+      : [];
 
   return (
     <div className="space-y-6">
@@ -79,7 +83,7 @@ export function ResultSearchForm() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center">
       <div className="min-w-0">
         <Input
-          label="Student Roll Number"
+          label="Student Registration Number"
           name="rollNumber"
           value={rollNumber}
           onChange={(e) => setRollNumber(e.target.value.toUpperCase())}
@@ -87,7 +91,7 @@ export function ResultSearchForm() {
           autoComplete="off"
           required
           className="border-slate-200 text-base transition-colors focus:border-sky-500 focus:ring-sky-500"
-          helperText="Enter the roll number exactly as printed on your admit card or fee receipt."
+          helperText="Enter the registration number exactly as printed on your admit card or fee receipt."
         />
       </div>
 
@@ -117,8 +121,8 @@ export function ResultSearchForm() {
         aria-hidden="true"
       />
       <p className="text-xs leading-5 text-slate-600">
-        Enter your correct roll number to retrieve the published examination
-        result. Your result will appear below after verification.
+        Enter your registration number to retrieve all published examination
+        results. All published examinations will appear below after verification.
       </p>
     </div>
   </form>
@@ -130,7 +134,7 @@ export function ResultSearchForm() {
         <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-10 text-center">
           <Spinner label="Searching examination database for published mark sheet…" size="lg" />
           <p className="mt-2 text-xs text-slate-500">
-            Querying roll number &ldquo;{rollNumber.trim()}&rdquo;...
+            Querying registration number &ldquo;{rollNumber.trim()}&rdquo;...
           </p>
         </div>
       ) : null}
@@ -149,13 +153,13 @@ export function ResultSearchForm() {
             <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" aria-hidden />
             <div>
               <h3 className="text-base font-bold text-amber-950">
-                No result found for this roll number.
+                No result found for this registration number.
               </h3>
               <p className="mt-1 text-xs sm:text-sm text-amber-900 leading-relaxed">
-                We could not locate an examination result or scorecard for roll number &ldquo;{rollNumber.trim()}&rdquo;.
+                We could not locate an examination result or scorecard for registration number &ldquo;{rollNumber.trim()}&rdquo;.
               </p>
               <ul className="mt-3 space-y-1.5 text-xs text-amber-800 list-disc pl-4">
-                <li>Please verify that the roll number matches your admit card (e.g. <code>TICE/2026/001</code>).</li>
+                <li>Please verify that the registration number matches your admit card (e.g. <code>TICE/2026/001</code>).</li>
                 <li>Results recently conducted may take 24–48 hours to be officially uploaded.</li>
               </ul>
             </div>
@@ -164,8 +168,13 @@ export function ResultSearchForm() {
       ) : null}
 
       {/* Official Mark Sheet Presentation Card */}
-      {result ? (
-        <div className="print-area animate-fade-in-up">
+      {results.length > 0 ? (
+        <div className="space-y-5">
+          {results.map((result, index) => (
+        <div
+          className="print-area animate-fade-in-up"
+          key={`${result.examName || "exam"}-${result.resultDate || index}-${index}`}
+        >
           <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
             {/* Marksheet Institutional Header */}
             <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -178,22 +187,32 @@ export function ResultSearchForm() {
                     {siteConfig.name}
                   </h2>
                   <p className="text-xs font-semibold text-brand">
-                    Examination Evaluation & Official Statement of Marks
+                    Examination Evaluation &amp; Official Statement of Marks
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Badge
-                  tone={result.passStatus === "pass" ? "success" : "danger"}
+                  tone={
+                    result.passStatus === "pass"
+                      ? "success"
+                      : result.passStatus === "fail"
+                        ? "danger"
+                        : "muted"
+                  }
                   className="px-3 py-1 text-xs uppercase"
                 >
                   {result.passStatus === "pass" ? (
                     <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                  ) : (
+                  ) : result.passStatus === "fail" ? (
                     <XCircle className="h-3.5 w-3.5" aria-hidden />
-                  )}
-                  {result.passStatus === "pass" ? "Result: Passed" : "Result: Failed"}
+                  ) : null}
+                  {result.passStatus === "pass"
+                    ? "Result: Passed"
+                    : result.passStatus === "fail"
+                      ? "Result: Failed"
+                      : "Result on file"}
                 </Badge>
                 <button
                   type="button"
@@ -205,6 +224,15 @@ export function ResultSearchForm() {
                   Print Statement
                 </button>
               </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/60 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Examination
+              </p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                {result.examName || "Examination Result"}
+              </p>
             </div>
 
             {/* Student & Course Details */}
@@ -220,25 +248,45 @@ export function ResultSearchForm() {
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4 border border-slate-100">
                   <dt className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-                    Roll Number
+                    Registration Number
                   </dt>
                   <dd className="mt-1 text-base font-mono font-bold text-[#0284c7]">
                     {result.rollNumber}
                   </dd>
                 </div>
+                <div className="rounded-xl bg-slate-50 p-4 border border-slate-100">
+                  <dt className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                    Father&apos;s Name
+                  </dt>
+                  <dd className="mt-1 text-base font-bold text-slate-900">
+                    {result.fatherName || "—"}
+                  </dd>
+                </div>
                 <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 sm:col-span-2">
                   <dt className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-                    Enrolled Course / Program
+                    Examination Course
                   </dt>
                   <dd className="mt-1 text-sm font-bold text-brand">
                     {result.courseName}
                   </dd>
                 </div>
               </dl>
+              {result.photoUrl ? (
+                <div className="mt-4 flex items-center gap-3">
+                  <Image
+                    src={result.photoUrl}
+                    alt={`${result.studentName} student photograph`}
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="h-16 w-16 rounded-full object-cover"
+                  />
+                </div>
+              ) : null}
             </div>
 
             {/* Scorecard Metric Breakdown */}
-            <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4 border-t border-slate-100 pt-6">
+            <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-5 border-t border-slate-100 pt-6">
               <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-3 text-center">
                 <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
                   Marks Scored
@@ -254,9 +302,27 @@ export function ResultSearchForm() {
                   Percentage
                 </span>
                 <p className="mt-1 text-2xl font-black text-slate-900">
-                  {result.percentage}%
+                  {result.percentage !== null &&
+                  result.percentage !== undefined &&
+                  Number.isFinite(Number(result.percentage))
+                    ? `${Number(result.percentage).toFixed(2)}%`
+                    : "—"}
                 </p>
                 <span className="text-[10px] text-slate-400">Total Aggregate</span>
+              </div>
+
+              <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-3 text-center">
+                <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                  Passing Percentage
+                </span>
+                <p className="mt-1 text-2xl font-black text-slate-900">
+                  {result.passingPercentage !== null &&
+                  result.passingPercentage !== undefined &&
+                  Number.isFinite(Number(result.passingPercentage))
+                    ? `${Number(result.passingPercentage).toFixed(2)}%`
+                    : "—"}
+                </p>
+                <span className="text-[10px] text-slate-400">Required to pass</span>
               </div>
 
               <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-3 text-center">
@@ -264,7 +330,7 @@ export function ResultSearchForm() {
                   Grade Awarded
                 </span>
                 <p className="mt-1 text-2xl font-black text-brand">
-                  {result.grade}
+                  {result.grade || "—"}
                 </p>
                 <span className="text-[10px] text-slate-400">Performance</span>
               </div>
@@ -275,10 +341,14 @@ export function ResultSearchForm() {
                 </span>
                 <p
                   className={`mt-1 text-2xl font-black ${
-                    result.passStatus === "pass" ? "text-emerald-700" : "text-danger"
+                    result.passStatus === "pass" ? "text-emerald-700"                     : result.passStatus === "fail" ? "text-danger" : "text-slate-500"
                   }`}
                 >
-                  {result.passStatus === "pass" ? "PASS" : "FAIL"}
+                  {result.passStatus === "pass"
+                    ? "PASS"
+                    : result.passStatus === "fail"
+                      ? "FAIL"
+                      : "—"}
                 </p>
                 <span className="text-[10px] text-slate-400">Outcome</span>
               </div>
@@ -329,12 +399,27 @@ export function ResultSearchForm() {
                     : "Official Record"}
                 </strong>
               </span>
+              {result.resultDate ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+                  Examination Date:{" "}
+                  <strong className="text-slate-800">
+                    {new Date(result.resultDate).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </strong>
+                </span>
+              ) : null}
               <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
                 <ShieldCheck className="h-4 w-4" aria-hidden />
                 Verified by TICE Examination Controller
               </span>
             </div>
           </div>
+        </div>
+          ))}
         </div>
       ) : null}
     </div>

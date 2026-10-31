@@ -1,5 +1,18 @@
 import { uploadBuffer } from "./cloudinary";
 
+function escapeXml(value) {
+  return String(value ?? "").replace(/[<>&"']/g, (character) => {
+    const entities = {
+      "<": "&lt;",
+      ">": "&gt;",
+      "&": "&amp;",
+      '"': "&quot;",
+      "'": "&apos;",
+    };
+    return entities[character];
+  });
+}
+
 /**
  * Generates an elegant, formal A4 PORTRAIT SVG Certificate for Talent Institute & Computer Education.
  * Orientation: Portrait (800px x 1132px, exact A4 aspect ratio 1:1.414).
@@ -10,8 +23,11 @@ export function generateCertificateSvg({
   rollNumber,
   courseName,
   issueDate,
-  certificateNumber,
 }) {
+  const safeStudentName = escapeXml(studentName);
+  const safeFatherName = escapeXml(fatherName);
+  const safeRollNumber = escapeXml(rollNumber);
+  const safeCourseName = escapeXml(courseName);
   const formattedDate = issueDate
     ? new Date(issueDate).toLocaleDateString("en-IN", {
         day: "numeric",
@@ -23,8 +39,6 @@ export function generateCertificateSvg({
         month: "long",
         year: "numeric",
       });
-
-  const certNo = certificateNumber || `TICE-CERT-${Date.now().toString().slice(-6)}`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1132" width="800" height="1132" style="background:#ffffff; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <defs>
@@ -92,15 +106,10 @@ export function generateCertificateSvg({
 
   <!-- Identification Badges Row -->
   <g transform="translate(400, 375)">
-    <!-- Certificate No Pill -->
-    <rect x="-240" y="-16" width="220" height="32" rx="16" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.2" />
-    <text x="-130" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#0369a1">
-      CERT NO: ${certNo}
-    </text>
-    <!-- Roll No Pill -->
-    <rect x="20" y="-16" width="220" height="32" rx="16" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.2" />
-    <text x="130" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#0369a1">
-      ROLL NO: ${rollNumber}
+    <!-- Student Registration Number -->
+    <rect x="-210" y="-16" width="420" height="32" rx="16" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.2" />
+    <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#0369a1">
+      Registration Number: ${safeRollNumber}
     </text>
   </g>
 
@@ -111,13 +120,13 @@ export function generateCertificateSvg({
 
   <!-- Student Name (Prominent Calligraphic Display) -->
   <text x="400" y="505" text-anchor="middle" font-size="34" font-weight="900" fill="#0f172a" letter-spacing="1">
-    ${studentName}
+    ${safeStudentName}
   </text>
   <path d="M 240 522 L 560 522" stroke="#0284c7" stroke-width="2" />
 
   <!-- Parentage Info -->
   <text x="400" y="555" text-anchor="middle" font-size="14" font-weight="600" fill="#334155">
-    Son / Daughter of: ${fatherName}
+    Son / Daughter of: ${safeFatherName}
   </text>
 
   <text x="400" y="605" text-anchor="middle" font-size="14" font-weight="500" fill="#475569" letter-spacing="0.5">
@@ -128,7 +137,7 @@ export function generateCertificateSvg({
   <g transform="translate(400, 670)">
     <rect x="-280" y="-32" width="560" height="64" rx="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.04))" />
     <text x="0" y="8" text-anchor="middle" font-size="20" font-weight="900" fill="#0369a1" letter-spacing="0.5">
-      ${courseName}
+      ${safeCourseName}
     </text>
   </g>
 
