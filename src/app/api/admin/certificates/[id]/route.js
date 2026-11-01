@@ -7,6 +7,7 @@ import { parseJsonBody, certificateUpdateSchema } from "@/lib/validation";
 import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary";
+import { getCourseById } from "@/data/courses";
 
 async function getIdParams(params) {
   const resolved = await params;
@@ -58,6 +59,12 @@ export async function PATCH(request, { params }) {
   }
 
   const updates = { ...parsed.data };
+  if (updates.courseId && !updates.courseName) {
+    const course = getCourseById(updates.courseId);
+    if (!course) return jsonError("Select a valid course.", 400);
+    updates.courseName = course.title;
+    delete updates.courseId;
+  }
   if (updates.status === "issued" && !updates.issueDate) {
     updates.issueDate = new Date();
   }
@@ -80,15 +87,23 @@ export async function PATCH(request, { params }) {
     );
     if (!certificate) return jsonError("Certificate not found.", 404);
     if (certificate.student) {
-      await Student.updateOne(
-        { _id: certificate.student },
-        { $set: { certificateStatus: certificate.status } },
-      );
+      const studentUpdates = { certificateStatus: certificate.status };
+      if (updates.courseName) {
+        studentUpdates.certificateCourseName = certificate.courseName;
+      }
+      if (updates.issueDate) {
+        studentUpdates.certificateIssueDate = certificate.issueDate;
+      }
+      if (updates.file) {
+        studentUpdates.certificateUrl = certificate.file?.url;
+        studentUpdates.certificatePublicId = certificate.file?.publicId || "";
+      }
+      await Student.updateOne({ _id: certificate.student }, { $set: studentUpdates });
     }
     return jsonSuccess({ certificate });
   } catch (err) {
     if (err.code === 11000) {
-      return jsonError("Certificate number already exists.", 409);
+      return jsonError("Registration number already exists in certificate registry.", 409);
     }
     console.error("Update certificate:", err.message);
     return jsonError("Unable to update certificate.", 500);

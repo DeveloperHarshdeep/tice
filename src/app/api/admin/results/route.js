@@ -3,9 +3,15 @@ import Result from "@/models/Result";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
 import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
-import { paginationSchema } from "@/lib/validation";
+import {
+  paginationSchema,
+  parseJsonBody,
+  resultCreateSchema,
+} from "@/lib/validation";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { buildResultFields } from "@/lib/result-utils";
+import { isValidObjectId } from "@/lib/normalize";
+import { getCourseById } from "@/data/courses";
 
 export async function GET(request) {
   const { error } = await requireAdmin(request);
@@ -35,8 +41,8 @@ export async function GET(request) {
 
     const [items, total] = await Promise.all([
       Result.find(filter)
-        .populate("student", "fullName rollNumber courseId courseName resultUrl")
-        .sort({ createdAt: -1 })
+        .populate("student", "fullName rollNumber fatherName photo imageUrl courseId courseName resultUrl")
+        .sort({ resultDate: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
@@ -60,83 +66,65 @@ export async function POST(request) {
   const { error } = await requireAdmin(request);
   if (error) return adminAuthErrorResponse(error);
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonError("Invalid JSON body.", 400);
+  const parsed = await parseJsonBody(request, resultCreateSchema);
+  if (!parsed.success) return jsonError(parsed.error, 400);
+  const data = parsed.data;
+  const courseName =
+    data.courseName?.trim() || getCourseById(data.courseId)?.title || "";
+  if (!data.studentId && !data.rollNumber) {
+    return jsonError("Select an existing student.", 400);
   }
-
-  const {
-    studentId,
-    rollNumber,
-    resultUrl,
-    resultPublicId,
-    examName = "Final Course Examination",
-    resultDate,
-    marksObtained,
-    maxMarks = 100,
-    publicationStatus = "published",
-    showPhotoPublicly = false,
-    replace = false,
-  } = body;
+  if (courseName.length < 2) {
+    return jsonError("Enter a course name with at least 2 characters.", 400);
+  }
+  if (data.marksObtained > data.maxMarks) {
+    return jsonError("Obtained marks cannot exceed maximum marks.", 400);
+  }
+  if (data.studentId && !isValidObjectId(data.studentId)) {
+    return jsonError("Invalid student ID.", 400);
+  }
 
   try {
     await connectDB();
 
-    // Find student either by ID or by rollNumber
     let student;
-    if (studentId) {
-      student = await Student.findById(studentId);
-    } else if (rollNumber) {
-      student = await Student.findOne({ rollNumber: rollNumber.trim().toUpperCase() });
+    if (data.studentId) {
+      student = await Student.findById(data.studentId);
+    } else if (data.rollNumber) {
+      student = await Student.findOne({
+        rollNumber: data.rollNumber.trim().toUpperCase(),
+      });
     }
 
     if (!student || student.archived) {
       return jsonError("Registered student not found.", 404);
     }
 
-    // Check if result already exists and confirmation is needed
-    if (student.resultUrl && !replace) {
-      return jsonError(
-        `A result document is already uploaded for ${student.fullName} (${student.rollNumber}). Confirm to replace.`,
-        409,
-      );
-    }
-
-    const marksNum = marksObtained !== undefined && marksObtained !== "" ? Number(marksObtained) : 85;
-    const maxNum = maxMarks !== undefined && maxMarks !== "" ? Number(maxMarks) : 100;
-    const computed = buildResultFields(marksNum, maxNum);
-    const dateOfResult = resultDate ? new Date(resultDate) : new Date();
-
-    // Update Student record with result document and details
-    if (resultUrl) {
-      student.resultUrl = resultUrl;
-      student.resultPublicId = resultPublicId || "";
-    }
-    student.examName = examName;
-    student.resultDate = dateOfResult;
-    student.marksObtained = marksNum;
-    student.maxMarks = maxNum;
-    student.percentage = computed.percentage;
-    student.grade = computed.grade;
-    student.resultPublicationStatus = publicationStatus;
-    await student.save();
-
-    // Create or update Result document
-    const resultDoc = await Result.findOneAndUpdate(
-      { student: student._id },
-      {
-        $set: {
-          student: student._id,
-          ...computed,
-          publicationStatus,
-          showPhotoPublicly,
-          publishedAt: publicationStatus === "published" ? new Date() : undefined,
-        },
-      },
-      { upsert: true, new: true },
+    const computed = buildResultFields(
+      data.marksObtained,
+      data.maxMarks,
+      data.passingPercentage,
+      data.grade,
     );
+    const resultDoc = await Result.create({
+      student: student._id,
+      ...(data.courseId ? { courseId: data.courseId } : {}),
+      courseName,
+      examName: data.examName,
+      resultDate: data.resultDate,
+      ...computed,
+      ...(data.resultUrl
+        ? {
+            resultUrl: data.resultUrl,
+            resultPublicId: data.resultPublicId || "",
+          }
+        : {}),
+      publicationStatus: data.publicationStatus,
+      showPhotoPublicly: data.showPhotoPublicly,
+      ...(data.publicationStatus === "published"
+        ? { publishedAt: new Date() }
+        : {}),
+    });
 
     return jsonSuccess({
       result: resultDoc,
@@ -144,9 +132,6 @@ export async function POST(request) {
         id: student._id,
         fullName: student.fullName,
         rollNumber: student.rollNumber,
-        resultUrl: student.resultUrl,
-        grade: student.grade,
-        percentage: student.percentage,
       },
     }, 201);
   } catch (err) {

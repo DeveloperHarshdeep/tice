@@ -3,10 +3,15 @@ import Certificate from "@/models/Certificate";
 import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
 import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
-import { paginationSchema } from "@/lib/validation";
+import {
+  paginationSchema,
+  parseJsonBody,
+  certificateCreateSchema,
+} from "@/lib/validation";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { uploadGeneratedCertificate } from "@/lib/certificate-generator";
-import { normalizeCertificateNumber } from "@/lib/normalize";
+import { isValidObjectId } from "@/lib/normalize";
+import { getCourseById } from "@/data/courses";
 
 export async function GET(request) {
   const { error } = await requireAdmin(request);
@@ -21,17 +26,26 @@ export async function GET(request) {
   if (!parsed.success) return jsonError("Invalid query parameters.", 400);
 
   const { page, limit, q } = parsed.data;
-  const filter = {};
-  if (q) {
-    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    filter.$or = [{ certificateNumber: regex }, { courseName: regex }];
-  }
-
   try {
     await connectDB();
+    let filter = {};
+    if (q) {
+      const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      const matchingStudents = await Student.find({
+        $or: [{ rollNumber: regex }, { fullName: regex }],
+      }).select("_id");
+      filter = {
+        $or: [
+          { certificateNumber: regex },
+          { courseName: regex },
+          { student: { $in: matchingStudents.map((student) => student._id) } },
+        ],
+      };
+    }
+
     const [items, total] = await Promise.all([
       Certificate.find(filter)
-        .populate("student", "fullName rollNumber fatherName contactNumber archived certificateUrl")
+        .populate("student", "fullName rollNumber fatherName contactNumber archived certificateUrl courseId courseName photo imageUrl")
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -56,56 +70,58 @@ export async function POST(request) {
   const { error } = await requireAdmin(request);
   if (error) return adminAuthErrorResponse(error);
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonError("Invalid JSON body.", 400);
+  const parsed = await parseJsonBody(request, certificateCreateSchema);
+  if (!parsed.success) return jsonError(parsed.error, 400);
+  const data = parsed.data;
+  if (!data.studentId && !data.rollNumber) {
+    return jsonError("Select an existing student.", 400);
   }
-
-  const {
-    studentId,
-    rollNumber,
-    courseName,
-    issueDate,
-    status = "issued",
-    reissue = false,
-    file,
-  } = body;
-
-  if (!courseName || !courseName.trim()) {
-    return jsonError("Course name is required.", 400);
+  const courseName =
+    data.courseName?.trim() || getCourseById(data.courseId)?.title || "";
+  if (courseName.length < 2) {
+    return jsonError("Enter a course name with at least 2 characters.", 400);
   }
-
+  if (data.studentId && !isValidObjectId(data.studentId)) {
+    return jsonError("Invalid student ID.", 400);
+  }
   try {
     await connectDB();
 
-    // Find student either by ID or by rollNumber
     let student;
-    if (studentId) {
-      student = await Student.findById(studentId);
-    } else if (rollNumber) {
-      student = await Student.findOne({ rollNumber: rollNumber.trim().toUpperCase() });
+    if (data.studentId) {
+      student = await Student.findById(data.studentId);
+    } else if (data.rollNumber) {
+      student = await Student.findOne({
+        rollNumber: data.rollNumber.trim().toUpperCase(),
+      });
     }
 
     if (!student || student.archived) {
       return jsonError("Registered student not found.", 404);
     }
 
-    // Check for accidental duplicate issuance
-    if (student.certificateUrl && !reissue) {
+    const existingCertificate = await Certificate.findOne({ student: student._id });
+    if ((student.certificateUrl || existingCertificate) && !data.reissue) {
       return jsonError(
         `A certificate has already been issued to ${student.fullName} (${student.rollNumber}). Confirm reissue to overwrite.`,
         409,
       );
     }
 
-    const certDate = issueDate ? new Date(issueDate) : new Date();
-    const normalizedCertNo = body.certificateNumber
-      ? normalizeCertificateNumber(body.certificateNumber)
-      : `TICE-CERT-${new Date().getFullYear()}-${student.rollNumber.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || Date.now().toString().slice(-4)}`;
+    const certDate = data.issueDate || new Date();
+    const registrationNumber = student.rollNumber;
+    const registrationConflict = await Certificate.exists({
+      certificateNumber: registrationNumber,
+      student: { $ne: student._id },
+    });
+    if (registrationConflict) {
+      return jsonError(
+        "This registration number conflicts with an existing certificate record.",
+        409,
+      );
+    }
 
-    let certificateFile = file;
+    let certificateFile = data.file;
 
     // If no manual file was provided, generate the professional A4 portrait SVG and upload to Cloudinary
     if (!certificateFile || !certificateFile.url) {
@@ -114,9 +130,8 @@ export async function POST(request) {
           studentName: student.fullName,
           fatherName: student.fatherName,
           rollNumber: student.rollNumber,
-          courseName: courseName.trim(),
+          courseName,
           issueDate: certDate,
-          certificateNumber: normalizedCertNo,
         });
 
         certificateFile = {
@@ -135,10 +150,10 @@ export async function POST(request) {
     // Update Student record with issued certificate details
     student.certificateUrl = certificateFile.url;
     student.certificatePublicId = certificateFile.publicId || "";
-    student.certificateNumber = normalizedCertNo;
-    student.certificateCourseName = courseName.trim();
+    student.certificateNumber = registrationNumber;
+    student.certificateCourseName = courseName;
     student.certificateIssueDate = certDate;
-    student.certificateStatus = status || "issued";
+    student.certificateStatus = data.status;
     await student.save();
 
     // Create or update Certificate collection entry
@@ -147,11 +162,12 @@ export async function POST(request) {
       {
         $set: {
           student: student._id,
-          certificateNumber: normalizedCertNo,
-          courseName: courseName.trim(),
+          ...(data.courseId ? { courseId: data.courseId } : {}),
+          certificateNumber: registrationNumber,
+          courseName,
           file: certificateFile,
           issueDate: certDate,
-          status: status || "issued",
+          status: data.status,
         },
       },
       { upsert: true, new: true },
@@ -165,7 +181,6 @@ export async function POST(request) {
           fullName: student.fullName,
           rollNumber: student.rollNumber,
           certificateUrl: student.certificateUrl,
-          certificateNumber: student.certificateNumber,
         },
         certificateUrl: certificateFile.url,
       },
@@ -173,7 +188,7 @@ export async function POST(request) {
     );
   } catch (err) {
     if (err.code === 11000) {
-      return jsonError("Certificate number already exists in registry.", 409);
+      return jsonError("Registration number already exists in certificate registry.", 409);
     }
     console.error("Create certificate error:", err.message);
     return jsonError("Unable to issue certificate.", 500);

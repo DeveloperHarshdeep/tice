@@ -8,6 +8,7 @@ import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary";
 import { getCourseById } from "@/data/courses";
+import { studentUpdateSchema } from "@/lib/validation";
 
 async function getIdParams(params) {
   const resolved = await params;
@@ -47,19 +48,27 @@ export async function PATCH(request, { params }) {
   const id = await getIdParams(params);
   if (!isValidObjectId(id)) return jsonError("Invalid student ID.", 400);
 
-  let updates;
+  let body;
   try {
-    updates = await request.json();
+    body = await request.json();
   } catch {
     return jsonError("Invalid JSON body.", 400);
   }
+
+  const parsed = studentUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonError(parsed.error.issues.map((issue) => issue.message).join("; "), 400);
+  }
+  const updates = parsed.data;
 
   try {
     await connectDB();
 
     if (updates.courseId && !updates.courseName) {
       const course = getCourseById(updates.courseId);
-      if (course) updates.courseName = course.title;
+      if (!course) return jsonError("Enter a valid course name.", 400);
+      updates.courseName = course.title;
+      delete updates.courseId;
     }
 
     if (updates.photo && updates.photo.url) {
@@ -95,12 +104,23 @@ export async function DELETE(request, { params }) {
     const student = await Student.findById(id);
     if (!student || student.archived) return jsonError("Student not found.", 404);
 
-    if (student.certificateUrl || student.resultUrl) {
+    const [hasCertificateRecord, hasResultRecord] = await Promise.all([
+      Certificate.exists({ student: id }),
+      Result.exists({ student: id }),
+    ]);
+
+    if (
+      student.certificateUrl ||
+      student.resultUrl ||
+      hasCertificateRecord ||
+      hasResultRecord
+    ) {
       student.archived = true;
       await student.save();
       return jsonSuccess({
         archived: true,
-        message: "Student archived because issued certificates or published results exist.",
+        message:
+          "Student archived because associated result or certificate records must be preserved.",
       });
     }
 

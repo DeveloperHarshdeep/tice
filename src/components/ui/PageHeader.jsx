@@ -3,6 +3,7 @@ import { Container } from "@/components/layout/Container";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { Badge } from "./Badge";
 import { BookOpen, GraduationCap } from "lucide-react";
+import { CourseTypingAnimation } from "./CourseTypingAnimation";
 
 export function PageHeader({
   title,
@@ -13,6 +14,7 @@ export function PageHeader({
   actions,
   image,
   className = "",
+  showCourseTyping = false,
 }) {
   // ---- Normalize inputs -------------------------------------------------
   const titleText = typeof title === "string" ? title.trim() : "";
@@ -109,7 +111,7 @@ export function PageHeader({
             </div>
 
             <h1 className="break-words text-3xl font-extrabold leading-[1.15] tracking-tight text-sky-950 sm:text-4xl lg:text-[2.75rem]">
-              {title}
+              {showCourseTyping ? <CourseTypingAnimation /> : title}
             </h1>
 
             {subtitle && (

@@ -1,12 +1,12 @@
 import { connectDB } from "@/lib/db";
 import Result from "@/models/Result";
-import Student from "@/models/Student";
 import { requireAdmin } from "@/lib/auth";
 import { adminAuthErrorResponse, jsonError, jsonSuccess } from "@/lib/api-response";
 import { parseJsonBody, resultUpdateSchema } from "@/lib/validation";
 import { isValidObjectId } from "@/lib/normalize";
 import { verifySameOrigin } from "@/lib/rate-limit";
 import { buildResultFields } from "@/lib/result-utils";
+import { getCourseById } from "@/data/courses";
 
 async function getIdParams(params) {
   const resolved = await params;
@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     const result = await Result.findById(id)
-      .populate("student", "fullName rollNumber courseId")
+      .populate("student", "fullName rollNumber fatherName photo imageUrl courseId courseName")
       .lean();
     if (!result) return jsonError("Result not found.", 404);
     return jsonSuccess({ result: { ...result, id: result._id.toString() } });
@@ -51,10 +51,51 @@ export async function PATCH(request, { params }) {
 
     const marksObtained = parsed.data.marksObtained ?? existing.marksObtained;
     const maxMarks = parsed.data.maxMarks ?? existing.maxMarks;
-    const computed = buildResultFields(marksObtained, maxMarks);
+    const passingPercentage =
+      parsed.data.passingPercentage ?? existing.passingPercentage;
+    if (!Number.isFinite(passingPercentage)) {
+      return jsonError(
+        "Set a passing percentage between 0 and 100 for this result.",
+        400,
+      );
+    }
+    if (marksObtained > maxMarks) {
+      return jsonError("Obtained marks cannot exceed maximum marks.", 400);
+    }
+    const computed = buildResultFields(
+      marksObtained,
+      maxMarks,
+      passingPercentage,
+      parsed.data.grade ?? existing.grade,
+    );
 
     const updates = {
       ...computed,
+      ...(parsed.data.courseName !== undefined
+        ? {
+            courseName: parsed.data.courseName,
+            ...(parsed.data.courseId ? { courseId: parsed.data.courseId } : {}),
+          }
+        : parsed.data.courseId
+          ? {
+              courseName:
+                getCourseById(parsed.data.courseId)?.title ||
+                parsed.data.courseId,
+              courseId: parsed.data.courseId,
+            }
+          : {}),
+      ...(parsed.data.examName !== undefined
+        ? { examName: parsed.data.examName }
+        : {}),
+      ...(parsed.data.resultDate !== undefined
+        ? { resultDate: parsed.data.resultDate }
+        : {}),
+      ...(parsed.data.resultUrl !== undefined
+        ? {
+            resultUrl: parsed.data.resultUrl,
+            resultPublicId: parsed.data.resultPublicId || "",
+          }
+        : {}),
       ...(parsed.data.publicationStatus !== undefined ?
         { publicationStatus: parsed.data.publicationStatus }
       : {}),
@@ -76,23 +117,6 @@ export async function PATCH(request, { params }) {
       { new: true, runValidators: true },
     );
 
-    if (existing.student) {
-      const studentUpdates = {
-        marksObtained,
-        maxMarks,
-        percentage: computed.percentage,
-        grade: computed.grade,
-        resultPublicationStatus: result.publicationStatus,
-      };
-      if (parsed.data.resultUrl) {
-        studentUpdates.resultUrl = parsed.data.resultUrl;
-        studentUpdates.resultPublicId = parsed.data.resultPublicId || "";
-      }
-      if (parsed.data.examName) studentUpdates.examName = parsed.data.examName;
-      if (parsed.data.resultDate) studentUpdates.resultDate = parsed.data.resultDate;
-      await Student.findByIdAndUpdate(existing.student, { $set: studentUpdates });
-    }
-
     return jsonSuccess({ result });
   } catch (err) {
     console.error("Update result:", err.message);
@@ -113,20 +137,7 @@ export async function DELETE(request, { params }) {
     const result = await Result.findById(id);
     if (!result) return jsonError("Result not found.", 404);
 
-    if (result.publicationStatus === "published") {
-      return jsonError(
-        "Unpublish the result before deleting, or edit it instead.",
-        400,
-      );
-    }
-
     await Result.deleteOne({ _id: id });
-    if (result.student) {
-      await Student.updateOne(
-        { _id: result.student },
-        { $set: { resultPublicationStatus: "draft" } },
-      );
-    }
     return jsonSuccess({ deleted: true });
   } catch (err) {
     console.error("Delete result:", err.message);

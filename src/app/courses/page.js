@@ -1,3 +1,4 @@
+
 import { PublicShell } from "@/components/layout/PublicShell";
 import { Container } from "@/components/layout/Container";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -31,7 +32,9 @@ export default function CoursesPage() {
         badgeTone="sky"
         breadcrumbs={[{ label: "Courses" }]}
         image={siteImages.methodology.codingAndWeb}
+        showCourseTyping={true}
       />
+
       <Container className="py-12 md:py-16">
         <CourseCatalog />
       </Container>

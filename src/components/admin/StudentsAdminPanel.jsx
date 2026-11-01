@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { courses } from "@/data/courses";
 import { adminFetch, uploadFile } from "@/lib/admin-fetch";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
@@ -34,8 +32,7 @@ const emptyForm = {
   fullName: "",
   fatherName: "",
   contactNumber: "",
-  courseId: courses[0]?.id || "basic-computer",
-  courseName: courses[0]?.title || "Basic Computer Course",
+  courseName: "",
   enrollmentDate: "",
 };
 
@@ -84,15 +81,6 @@ export function StudentsAdminPanel() {
     }
   }
 
-  function handleCourseChange(courseId) {
-    const matched = courses.find((c) => c.id === courseId);
-    setForm((f) => ({
-      ...f,
-      courseId,
-      courseName: matched?.title || courseId,
-    }));
-  }
-
   function startEdit(student) {
     setEditingId(student._id || student.id);
     setForm({
@@ -100,8 +88,7 @@ export function StudentsAdminPanel() {
       fullName: student.fullName,
       fatherName: student.fatherName,
       contactNumber: student.contactNumber || "",
-      courseId: student.courseId || "basic-computer",
-      courseName: student.courseName || "",
+      courseName: student.courseName || student.courseTitle || student.courseId || "",
       enrollmentDate: student.enrollmentDate
         ? new Date(student.enrollmentDate).toISOString().slice(0, 10)
         : "",
@@ -145,6 +132,11 @@ export function StudentsAdminPanel() {
     }
     if (!form.contactNumber.trim()) {
       setError("Contact number is required.");
+      setSaving(false);
+      return;
+    }
+    if (form.courseName.trim().length < 2) {
+      setError("Course name must contain at least 2 characters.");
       setSaving(false);
       return;
     }
@@ -305,18 +297,14 @@ export function StudentsAdminPanel() {
             helperText="10-digit mobile or WhatsApp number"
           />
 
-          <Select
+          <Input
             label="Enrolled Course *"
-            value={form.courseId}
-            onChange={(e) => handleCourseChange(e.target.value)}
+            value={form.courseName}
+            onChange={(e) => setForm({ ...form, courseName: e.target.value })}
+            placeholder="e.g. Web Designing"
             required
-          >
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title} ({c.level})
-              </option>
-            ))}
-          </Select>
+            maxLength={160}
+          />
 
           <Input
             label="Admission / Enrollment Date"

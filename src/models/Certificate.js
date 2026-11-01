@@ -16,6 +16,7 @@ const CertificateSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    courseId: { type: String, trim: true },
     certificateNumber: {
       type: String,
       required: true,

@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { adminFetch, uploadFile } from "@/lib/admin-fetch";
+import { getCourseById } from "@/data/courses";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -31,14 +33,16 @@ export function ResultsAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
-  const [confirmReplace, setConfirmReplace] = useState(false);
   const [file, setFile] = useState(null);
 const [form, setForm] = useState({
   studentId: "",
+  courseName: "",
   examName: "Final Practical Examination",
   resultDate: new Date().toISOString().slice(0, 10),
   marksObtained: "",
   maxMarks: "100",
+  passingPercentage: "",
+  grade: "",
   publicationStatus: "published",
   showPhotoPublicly: false,
 });
@@ -70,29 +74,29 @@ const [form, setForm] = useState({
   }, [load]);
 
   const selectedStudent = students.find((s) => (s._id || s.id) === form.studentId);
-  const hasExistingResult = Boolean(
-    selectedStudent?.resultUrl ||
-      items.some(
-        (r) =>
-          (r.student?._id || r.student?.id || r.student) === form.studentId &&
-          (r._id || r.id) !== editingId
-      )
-  );
-
   function handleStudentChange(studentId) {
-    setConfirmReplace(false);
     setForm((f) => ({ ...f, studentId }));
   }
 
-  // Live calculation of preview percentage
-const calculatedPercentage =
-  form.marksObtained.trim() !== "" &&
-  form.maxMarks.trim() !== "" &&
-  Number(form.maxMarks) > 0
-    ? Math.round(
-        (Number(form.marksObtained) / Number(form.maxMarks)) * 100
-      )
-    : null;
+  const marksAreValid =
+    form.marksObtained.trim() !== "" &&
+    form.maxMarks.trim() !== "" &&
+    Number.isFinite(Number(form.marksObtained)) &&
+    Number.isFinite(Number(form.maxMarks)) &&
+    Number(form.maxMarks) > 0 &&
+    Number(form.marksObtained) >= 0 &&
+    Number(form.marksObtained) <= Number(form.maxMarks);
+  const calculatedPercentage =
+    marksAreValid
+      ? Math.round(
+          (Number(form.marksObtained) / Number(form.maxMarks)) * 10000
+        ) / 100
+      : null;
+  const passingPercentageIsValid =
+    form.passingPercentage.trim() !== "" &&
+    Number.isFinite(Number(form.passingPercentage)) &&
+    Number(form.passingPercentage) >= 0 &&
+    Number(form.passingPercentage) <= 100;
   async function save(e) {
     e.preventDefault();
     setSaving(true);
@@ -110,13 +114,15 @@ const calculatedPercentage =
 
       const payload = {
         studentId: form.studentId,
-        examName: form.examName || "Final Practical Examination",
-        resultDate: form.resultDate || new Date().toISOString().slice(0, 10),
+        courseName: form.courseName.trim(),
+        examName: form.examName,
+        ...(form.resultDate ? { resultDate: form.resultDate } : {}),
         marksObtained: Number(form.marksObtained),
         maxMarks: Number(form.maxMarks),
+        passingPercentage: Number(form.passingPercentage),
+        grade: form.grade.trim(),
         publicationStatus: form.publicationStatus,
         showPhotoPublicly: form.showPhotoPublicly,
-        replace: confirmReplace,
         ...(fileUrl ? { resultUrl: fileUrl, resultPublicId: filePublicId } : {}),
       };
 
@@ -136,21 +142,23 @@ const calculatedPercentage =
         });
         setSuccess({
           message: "Result published and linked to student record successfully!",
-          url: fileUrl || created.student?.resultUrl,
+          url: fileUrl || created.result?.resultUrl,
         });
       }
 
 
 setEditingId(null);
 setFile(null);
-setConfirmReplace(false);
 
 setForm({
   studentId: "",
+  courseName: "",
   examName: "Final Practical Examination",
   resultDate: new Date().toISOString().slice(0, 10),
   marksObtained: "",
   maxMarks: "100",
+  passingPercentage: "",
+  grade: "",
   publicationStatus: "published",
   showPhotoPublicly: false,
 });
@@ -168,12 +176,25 @@ await load();
     setEditingId(row._id || row.id);
     setForm({
       studentId: row.student?._id || row.student,
-      examName: row.student?.examName || "Final Practical Examination",
-      resultDate: row.student?.resultDate
-        ? new Date(row.student.resultDate).toISOString().slice(0, 10)
+      courseName:
+        row.courseName ||
+        getCourseById(row.courseId)?.title ||
+        row.student?.courseName ||
+        getCourseById(row.student?.courseId)?.title ||
+        row.courseId ||
+        row.student?.courseId ||
+        "",
+      examName: row.examName || "Final Practical Examination",
+      resultDate: row.resultDate
+        ? new Date(row.resultDate).toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10),
       marksObtained: String(row.marksObtained),
       maxMarks: String(row.maxMarks),
+      passingPercentage:
+        row.passingPercentage === undefined || row.passingPercentage === null
+          ? ""
+          : String(row.passingPercentage),
+      grade: row.grade || "",
       publicationStatus: row.publicationStatus,
       showPhotoPublicly: row.showPhotoPublicly || false,
     });
@@ -185,21 +206,23 @@ await load();
 function cancelEdit() {
   setEditingId(null);
   setFile(null);
-  setConfirmReplace(false);
 
   setForm({
     studentId: "",
+    courseName: "",
     examName: "Final Practical Examination",
     resultDate: new Date().toISOString().slice(0, 10),
     marksObtained: "",
     maxMarks: "100",
+    passingPercentage: "",
+    grade: "",
     publicationStatus: "published",
     showPhotoPublicly: false,
   });
 }
 
   async function removeRow(id) {
-    if (!confirm("Delete this draft result?")) return;
+    if (!confirm("Delete this examination result? The student and other results will remain unchanged.")) return;
     try {
       await adminFetch(`/api/admin/results/${id}`, { method: "DELETE" });
       await load();
@@ -278,42 +301,64 @@ function cancelEdit() {
           ) : null}
         </div>
 
-        {hasExistingResult && !editingId ? (
-          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50/90 p-3.5 text-amber-950">
-            <p className="text-xs font-bold flex items-center gap-1.5">
-              ⚠️ Warning: Existing Result Detected
-            </p>
-            <p className="mt-1 text-xs text-amber-900">
-              A result is already recorded for {selectedStudent?.fullName} ({selectedStudent?.rollNumber}).
-              Saving will overwrite examination scores and replace any uploaded document.
-            </p>
-            <label className="mt-2.5 flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={confirmReplace}
-                onChange={(e) => setConfirmReplace(e.target.checked)}
-                className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
-              />
-              Confirm replacement and overwrite existing result
-            </label>
-          </div>
-        ) : null}
-
         <form onSubmit={save} className="mt-5 grid gap-4 sm:grid-cols-2">
           <Select
-            label="Select Candidate *"
+            label="Select Student *"
             value={form.studentId}
             onChange={(e) => handleStudentChange(e.target.value)}
+            disabled={Boolean(editingId)}
             required
-            helperText="Choose the enrolled student to assign marks"
+            helperText={
+              editingId
+                ? "The student linked to an existing result cannot be changed."
+                : "Choose the existing student by registration number"
+            }
           >
-            <option value="">-- Choose Candidate --</option>
+            <option value="">-- Choose Student --</option>
             {students.map((s) => (
               <option key={s._id || s.id} value={s._id || s.id}>
-                {s.rollNumber} — {s.fullName} ({s.courseTitle || s.courseName || s.courseId})
+                {s.rollNumber} — {s.fullName}
               </option>
             ))}
           </Select>
+
+          <Input
+            label="Course Name *"
+            value={form.courseName}
+            onChange={(e) => setForm({ ...form, courseName: e.target.value })}
+            placeholder="e.g. Data Analyst"
+            required
+            maxLength={160}
+          />
+
+          {selectedStudent ? (
+            <div className="flex items-center gap-4 rounded-xl border border-sky-100 bg-sky-50/60 p-4 sm:col-span-2">
+              {selectedStudent.photo?.url || selectedStudent.imageUrl ? (
+                <Image
+                  src={selectedStudent.photo?.url || selectedStudent.imageUrl}
+                  alt=""
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="h-16 w-16 shrink-0 rounded-full object-cover"
+                />
+              ) : null}
+              <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+                <div>
+                  <dt className="font-semibold text-slate-500">Student</dt>
+                  <dd className="mt-0.5 font-bold text-slate-900">{selectedStudent.fullName}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Registration Number</dt>
+                  <dd className="mt-0.5 font-mono font-bold text-slate-900">{selectedStudent.rollNumber}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Father&apos;s Name</dt>
+                  <dd className="mt-0.5 font-bold text-slate-900">{selectedStudent.fatherName || "—"}</dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
 
           <Select
             label="Publication Status *"
@@ -334,17 +379,17 @@ function cancelEdit() {
           />
 
           <Input
-            label="Examination / Result Date *"
+            label="Examination Date"
             type="date"
             value={form.resultDate}
             onChange={(e) => setForm({ ...form, resultDate: e.target.value })}
-            required
           />
 
           <Input
             label="Marks Obtained *"
             type="number"
             min="0"
+            step="any"
             max={form.maxMarks || "100"}
             value={form.marksObtained}
             onChange={(e) => setForm({ ...form, marksObtained: e.target.value })}
@@ -356,10 +401,33 @@ function cancelEdit() {
             label="Maximum Marks *"
             type="number"
             min="1"
+            step="any"
             value={form.maxMarks}
             onChange={(e) => setForm({ ...form, maxMarks: e.target.value })}
             placeholder="100"
             required
+          />
+
+          <Input
+            label="Passing Percentage (%) *"
+            type="number"
+            min="0"
+            max="100"
+            step="any"
+            value={form.passingPercentage}
+            onChange={(e) =>
+              setForm({ ...form, passingPercentage: e.target.value })
+            }
+            required
+          />
+
+          <Input
+            label="Grade"
+            value={form.grade}
+            onChange={(e) => setForm({ ...form, grade: e.target.value })}
+            placeholder="Leave blank to calculate from percentage"
+            maxLength={24}
+            helperText="Enter a grade manually or leave blank for the existing grade calculation."
           />
 
           {/* Live calculation banner */}
@@ -367,15 +435,20 @@ function cancelEdit() {
             <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 sm:col-span-2 flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 font-semibold text-sky-950">
                 <Calculator className="h-4 w-4 text-brand" aria-hidden />
-                Computed Percentage Preview: {calculatedPercentage}%
+                Computed Percentage Preview: {calculatedPercentage.toFixed(2)}%
               </span>
               <span className="font-bold text-brand">
-                {calculatedPercentage >= 40 ? "Status: Pass" : "Status: Fail"}
+                {passingPercentageIsValid
+                  ? (Number(form.marksObtained) / Number(form.maxMarks)) * 100 >=
+                    Number(form.passingPercentage)
+                    ? "Status: Pass"
+                    : "Status: Fail"
+                  : "Enter a passing percentage to calculate status"}
               </span>
             </div>
           ) : null}
 
-          {/* <div className="sm:col-span-2">
+          <div className="sm:col-span-2">
             <label className="block text-sm font-semibold text-foreground">
               Result Document / Marksheet File (PDF or Image)
             </label>
@@ -386,15 +459,41 @@ function cancelEdit() {
               onChange={(e) => setFile(e.target.files?.[0] || null)}
             />
             <p className="mt-1 text-[11px] text-slate-500">
-              Upload scanned mark sheet or certificate PDF to Cloudinary under talent-institute/results.
+              Upload a scanned marksheet or certificate PDF to Cloudinary.
             </p>
-          </div> */}
+          </div>
+
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.showPhotoPublicly}
+              onChange={(e) =>
+                setForm({ ...form, showPhotoPublicly: e.target.checked })
+              }
+              className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+            />
+            Show the student photograph on the public result page
+          </label>
 
           <div className="flex items-center gap-3 pt-2 sm:col-span-2">
             <Button
               type="submit"
               variant="primary"
-              disabled={saving || (hasExistingResult && !editingId && !confirmReplace)}
+              disabled={
+                saving ||
+                !form.studentId ||
+                form.courseName.trim().length < 2 ||
+                !form.examName.trim() ||
+                !Number.isFinite(Number(form.marksObtained)) ||
+                !Number.isFinite(Number(form.maxMarks)) ||
+                Number(form.maxMarks) <= 0 ||
+                Number(form.marksObtained) < 0 ||
+                Number(form.marksObtained) > Number(form.maxMarks) ||
+                !Number.isFinite(Number(form.passingPercentage)) ||
+                form.passingPercentage.trim() === "" ||
+                Number(form.passingPercentage) < 0 ||
+                Number(form.passingPercentage) > 100
+              }
             >
               {saving ? (
                 <Spinner label="Uploading & saving result record…" size="sm" />
@@ -424,7 +523,7 @@ function cancelEdit() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filter by roll number or candidate name..."
+              placeholder="Filter by registration number or student name..."
               className="pl-9"
             />
           </div>
@@ -442,9 +541,11 @@ function cancelEdit() {
             <table className="min-w-full text-left text-sm divide-y divide-slate-100">
               <thead className="bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="px-4 py-3.5">Candidate / Roll</th>
+                  <th className="px-4 py-3.5">Student / Registration No.</th>
+                  <th className="px-4 py-3.5">Examination / Course</th>
                   <th className="px-4 py-3.5">Score</th>
-                  <th className="px-4 py-3.5">Grade</th>
+                  <th className="px-4 py-3.5">Pass Mark</th>
+                  <th className="px-4 py-3.5">Outcome</th>
                   <th className="px-4 py-3.5">Document</th>
                   <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5 text-right">Actions</th>
@@ -464,21 +565,50 @@ function cancelEdit() {
                         {r.student?.rollNumber || "—"}
                       </p>
                     </td>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-slate-900">
+                        {r.examName || "Final Course Examination"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {r.courseName ||
+                          getCourseById(r.courseId)?.title ||
+                          r.student?.courseName ||
+                          getCourseById(r.student?.courseId)?.title ||
+                          r.courseId ||
+                          "Course not recorded"}
+                      </p>
+                      {r.resultDate ? (
+                        <p className="mt-1 text-[11px] text-slate-400">
+                          {new Date(r.resultDate).toLocaleDateString("en-IN")}
+                        </p>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-3 font-semibold text-slate-900">
                       {r.marksObtained} / {r.maxMarks}
                       <span className="ml-1 text-xs font-normal text-slate-500">
-                        ({r.percentage}%)
+                        ({Number(r.percentage).toFixed(2)}%)
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-sky-100 text-xs font-bold text-sky-900">
-                        {r.grade}
-                      </span>
+                      {r.passingPercentage !== null &&
+                      r.passingPercentage !== undefined &&
+                      Number.isFinite(Number(r.passingPercentage))
+                        ? `${Number(r.passingPercentage).toFixed(2)}%`
+                        : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      {r.student?.resultUrl ? (
+                      {r.passStatus ? (
+                        <Badge tone={r.passStatus === "pass" ? "success" : "danger"}>
+                          {r.passStatus === "pass" ? "PASS" : "FAIL"}
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.resultUrl || r.student?.resultUrl ? (
                         <a
-                          href={r.student.resultUrl}
+                          href={r.resultUrl || r.student.resultUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
@@ -510,18 +640,16 @@ function cancelEdit() {
                           <Pencil className="h-3 w-3" aria-hidden />
                           Edit
                         </Button>
-                        {r.publicationStatus === "draft" ? (
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            type="button"
-                            onClick={() => removeRow(r._id || r.id)}
-                            className="h-8 px-2.5 text-xs"
-                          >
-                            <Trash2 className="h-3 w-3" aria-hidden />
-                            Delete
-                          </Button>
-                        ) : null}
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          type="button"
+                          onClick={() => removeRow(r._id || r.id)}
+                          className="h-8 px-2.5 text-xs"
+                        >
+                          <Trash2 className="h-3 w-3" aria-hidden />
+                          Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>

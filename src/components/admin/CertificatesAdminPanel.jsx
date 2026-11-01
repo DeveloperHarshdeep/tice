@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { adminFetch, uploadFile } from "@/lib/admin-fetch";
+import { getCourseById } from "@/data/courses";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -31,7 +33,6 @@ export function CertificatesAdminPanel() {
   const [confirmReissue, setConfirmReissue] = useState(false);
   const [form, setForm] = useState({
     studentId: "",
-    certificateNumber: "",
     courseName: "",
     issueDate: new Date().toISOString().slice(0, 10),
     status: "issued",
@@ -81,8 +82,7 @@ export function CertificatesAdminPanel() {
     setForm((f) => ({
       ...f,
       studentId,
-      courseName: s?.courseTitle || s?.courseName || s?.courseId || f.courseName,
-      certificateNumber: f.certificateNumber || `TICE-CERT-${new Date().getFullYear()}-${s?.rollNumber?.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "001"}`,
+      courseName: s?.courseName || s?.courseTitle || s?.courseId || "",
     }));
   }
 
@@ -100,7 +100,9 @@ export function CertificatesAdminPanel() {
 
       if (editingId) {
         const patchBody = {
-          ...form,
+          courseName: form.courseName.trim(),
+          issueDate: form.issueDate,
+          status: form.status,
           ...(filePayload ? { file: filePayload } : {}),
         };
         await adminFetch(`/api/admin/certificates/${editingId}`, {
@@ -114,6 +116,7 @@ export function CertificatesAdminPanel() {
       } else {
         const postBody = {
           ...form,
+          courseName: form.courseName.trim(),
           reissue: confirmReissue,
           ...(filePayload ? { file: filePayload } : {}),
         };
@@ -134,7 +137,6 @@ setConfirmReissue(false);
 
 setForm({
   studentId: "",
-  certificateNumber: "",
   courseName: "",
   issueDate: new Date().toISOString().slice(0, 10),
   status: "issued",
@@ -153,8 +155,14 @@ await load();
     setEditingId(row._id || row.id);
     setForm({
       studentId: row.student?._id || row.student,
-      certificateNumber: row.certificateNumber,
-      courseName: row.courseName,
+      courseName:
+        row.courseName ||
+        getCourseById(row.courseId)?.title ||
+        row.student?.courseName ||
+        getCourseById(row.student?.courseId)?.title ||
+        row.courseId ||
+        row.student?.courseId ||
+        "",
       issueDate: row.issueDate
         ? new Date(row.issueDate).toISOString().slice(0, 10)
         : "",
@@ -168,11 +176,10 @@ await load();
     setEditingId(null);
     setFile(null);
     setForm({
-      studentId: students[0]?._id || students[0]?.id || "",
-      certificateNumber: "",
+      studentId: "",
       courseName: "",
-      issueDate: "",
-      status: "draft",
+      issueDate: new Date().toISOString().slice(0, 10),
+      status: "issued",
     });
   }
 
@@ -300,36 +307,62 @@ await load();
 
         <form onSubmit={save} className="mt-5 grid gap-4 sm:grid-cols-2">
           <Select
-            label="Candidate Student *"
+            label="Select Student *"
             value={form.studentId}
             onChange={(e) => handleStudentChange(e.target.value)}
+            disabled={Boolean(editingId)}
             required
-            helperText="Associate certificate with registered student"
+            helperText={
+              editingId
+                ? "The student linked to an existing certificate cannot be changed."
+                : "Choose an existing student by registration number"
+            }
           >
-            <option value="">-- Choose Candidate --</option>
+            <option value="">-- Choose Student --</option>
             {students.map((s) => (
               <option key={s._id || s.id} value={s._id || s.id}>
-                {s.rollNumber} — {s.fullName} ({s.courseTitle || s.courseName || s.courseId})
+                {s.rollNumber} — {s.fullName}
               </option>
             ))}
           </Select>
 
-          <Input
-            label="Certificate Number"
-            value={form.certificateNumber}
-            onChange={(e) =>
-              setForm({ ...form, certificateNumber: e.target.value })
-            }
-            placeholder="e.g. TICE-CERT-2026-001"
-            helperText="Auto-generated if left blank"
-          />
+          {selectedStudent ? (
+            <div className="flex items-center gap-4 rounded-xl border border-sky-100 bg-sky-50/60 p-4 sm:col-span-2">
+              {selectedStudent.photo?.url || selectedStudent.imageUrl ? (
+                <Image
+                  src={selectedStudent.photo?.url || selectedStudent.imageUrl}
+                  alt=""
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="h-16 w-16 shrink-0 rounded-full object-cover"
+                />
+              ) : null}
+              <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+                <div>
+                  <dt className="font-semibold text-slate-500">Student</dt>
+                  <dd className="mt-0.5 font-bold text-slate-900">{selectedStudent.fullName}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Registration Number</dt>
+                  <dd className="mt-0.5 font-mono font-bold text-slate-900">{selectedStudent.rollNumber}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Father&apos;s Name</dt>
+                  <dd className="mt-0.5 font-bold text-slate-900">{selectedStudent.fatherName || "—"}</dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
 
           <Input
-            label="Course Name (as printed on certificate) *"
+            label="Course Name *"
             value={form.courseName}
             onChange={(e) => setForm({ ...form, courseName: e.target.value })}
-            placeholder="e.g. Diploma in Computer Applications (DCA)"
+            placeholder="e.g. Web Designing"
             required
+            maxLength={160}
+            helperText="Enter the course name shown on the certificate."
           />
 
           <Input
@@ -370,7 +403,12 @@ await load();
             <Button
               type="submit"
               variant="primary"
-              disabled={saving || (hasExistingCertificate && !editingId && !confirmReissue)}
+              disabled={
+                saving ||
+                !form.studentId ||
+                form.courseName.trim().length < 2 ||
+                (hasExistingCertificate && !editingId && !confirmReissue)
+              }
             >
               {saving ? (
                 <Spinner label="Generating & issuing portrait certificate…" size="sm" />
@@ -400,7 +438,7 @@ await load();
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filter by cert # or candidate..."
+              placeholder="Filter by registration number or candidate..."
               className="pl-9"
             />
           </div>
@@ -418,8 +456,8 @@ await load();
             <table className="min-w-full text-left text-sm divide-y divide-slate-100">
               <thead className="bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th className="px-4 py-3.5">Certificate #</th>
-                  <th className="px-4 py-3.5">Candidate / Roll</th>
+                  <th className="px-4 py-3.5">Registration Number</th>
+                  <th className="px-4 py-3.5">Student</th>
                   <th className="px-4 py-3.5">Course</th>
                   <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5">File</th>
@@ -433,18 +471,23 @@ await load();
                     className="hover:bg-sky-50/30 transition-colors"
                   >
                     <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900">
-                      {c.certificateNumber}
+                      {c.student?.rollNumber || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-slate-900">
                         {c.student?.fullName || "—"}
                       </p>
                       <p className="font-mono text-xs text-slate-500">
-                        {c.student?.rollNumber || "—"}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-xs text-brand font-medium">
-                      {c.courseName}
+                      {c.courseName ||
+                        getCourseById(c.courseId)?.title ||
+                        c.student?.courseName ||
+                        getCourseById(c.student?.courseId)?.title ||
+                        c.courseId ||
+                        c.student?.courseId ||
+                        "Course not recorded"}
                     </td>
                     <td className="px-4 py-3">
                       <Badge tone={tone(c.status)} className="capitalize">

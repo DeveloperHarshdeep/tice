@@ -21,7 +21,7 @@ const StudentSchema = new mongoose.Schema(
     fullName: { type: String, required: true, trim: true },
     fatherName: { type: String, required: true, trim: true },
     contactNumber: { type: String, required: true, trim: true },
-    courseId: { type: String, trim: true, default: "basic-computer" },
+    courseId: { type: String, trim: true },
     courseName: { type: String, trim: true },
     photo: PhotoSchema,
     imageUrl: { type: String, trim: true },
@@ -45,7 +45,9 @@ const StudentSchema = new mongoose.Schema(
     marksObtained: { type: Number },
     maxMarks: { type: Number },
     percentage: { type: Number },
+    passingPercentage: { type: Number, min: 0, max: 100 },
     grade: { type: String, trim: true },
+    passStatus: { type: String, enum: ["pass", "fail"] },
     resultPublicationStatus: {
       type: String,
       enum: ["draft", "published"],

@@ -32,7 +32,7 @@ export function CertificateSearchForm() {
     if (!trimmed) {
       setState({
         type: "error",
-        message: "Please enter your student roll number.",
+        message: "Please enter your student registration number.",
       });
       return;
     }
@@ -53,7 +53,7 @@ export function CertificateSearchForm() {
           type: "error",
           message:
             json.error?.message ||
-            "Verification could not be completed. Please check the roll number and try again.",
+            "Verification could not be completed. Please check the registration number and try again.",
         });
         return;
       }
@@ -100,7 +100,7 @@ export function CertificateSearchForm() {
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
                 Confirm your certificate details using the official student
-                roll number issued by Talent Institute &amp; Computer Education.
+                registration number issued by Talent Institute &amp; Computer Education.
               </p>
             </div>
           </div>
@@ -112,17 +112,17 @@ export function CertificateSearchForm() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center">
       <div className="min-w-0">
         <Input
-          label="Student Roll Number or Certificate Number"
+          label="Student Registration Number"
           name="rollNumber"
           value={rollNumber}
           onChange={(e) =>
             setRollNumber(e.target.value.toUpperCase())
           }
-          placeholder="e.g. TICE/2026/001 or TICE-CERT-2026-0001"
+          placeholder="e.g. TICE/2026/001"
           autoComplete="off"
           required
           className="border-slate-200 text-base transition-colors focus:border-sky-500 focus:ring-sky-500"
-          helperText="Enter the roll number printed on your admission slip or scorecard."
+          helperText="Enter the registration number printed on your admission slip or scorecard."
         />
       </div>
 
@@ -157,7 +157,7 @@ export function CertificateSearchForm() {
         Secure verification
       </p>
       <p className="mt-0.5 text-xs leading-5 text-slate-500">
-        No account or password is required. Submit your roll number
+        No account or password is required. Submit your registration number
         to check the available institutional record.
       </p>
     </div>
@@ -182,7 +182,7 @@ export function CertificateSearchForm() {
           </h3>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-            Please wait while we look up the submitted roll number in the
+            Please wait while we look up the submitted registration number in the
             verification service.
           </p>
 
@@ -225,7 +225,7 @@ export function CertificateSearchForm() {
               </h3>
 
               <p className="mt-2 break-words text-sm leading-6 text-slate-600">
-                No issued certificate was found for roll number{" "}
+                No issued certificate was found for registration number{" "}
                 <span className="font-semibold text-slate-900">
                   {rollNumber.trim()}
                 </span>
@@ -239,7 +239,7 @@ export function CertificateSearchForm() {
 
                 <ul className="mt-2 list-disc space-y-2 pl-4 text-xs leading-5 text-amber-900/80">
                   <li>
-                    Check the spelling and format of your roll number.
+                    Check the spelling and format of your registration number.
                   </li>
                   <li>
                     Use the official number shown on your admission slip or
@@ -261,7 +261,7 @@ export function CertificateSearchForm() {
                 className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               >
                 <Search className="h-4 w-4" />
-                Try another roll number
+                Try another registration number
               </button>
             </div>
           </div>
@@ -339,18 +339,25 @@ export function CertificateSearchForm() {
 
                 <div className="min-w-0 rounded-xl border border-sky-200 bg-sky-50/50 p-4">
                   <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    Roll Number
+                    Registration Number
                   </dt>
                   <dd className="mt-2 break-all font-mono text-base font-bold text-sky-700">
-                    {certificate.rollNumber}
+                    {certificate.registrationNumber || certificate.rollNumber}
                   </dd>
                 </div>
-
-                <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:col-span-2">
+<div className="min-w-0 rounded-xl border border-sky-200 bg-sky-50/50 p-4">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Father&apos;s Name
+                  </dt>
+                  <dd className="mt-2 break-all text-base font-bold text-slate-900">
+                    {certificate.fatherName || "—"}
+                  </dd>
+                </div>
+<div className="min-w-0 rounded-xl border border-sky-200 bg-sky-50/50 p-4">
                   <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     Course Name
                   </dt>
-                  <dd className="mt-2 break-words text-base font-bold text-slate-900">
+                  <dd className="mt-2 break-all text-base font-bold text-slate-900">
                     {certificate.courseName}
                   </dd>
                 </div>
@@ -376,14 +383,6 @@ export function CertificateSearchForm() {
                   </dd>
                 </div>
 
-                <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    Certificate Serial Number
-                  </dt>
-                  <dd className="mt-2 break-all font-mono text-sm font-bold text-slate-800">
-                    {certificate.certificateNumber || "—"}
-                  </dd>
-                </div>
               </dl>
 
               {/* Certificate document */}

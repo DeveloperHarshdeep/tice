@@ -2,8 +2,12 @@ import { connectDB } from "@/lib/db";
 import Certificate from "@/models/Certificate";
 import Student from "@/models/Student";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
-import { normalizeRollNumber } from "@/lib/normalize";
+import {
+  normalizeCertificateNumber,
+  normalizeRollNumber,
+} from "@/lib/normalize";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { getCourseById } from "@/data/courses";
 
 export async function POST(request) {
   const ip = getClientIp(request);
@@ -21,7 +25,7 @@ export async function POST(request) {
 
   const query = body.rollNumber || body.query;
   if (!query || typeof query !== "string" || query.trim().length < 2) {
-    return jsonError("Please enter a valid roll number.", 400);
+    return jsonError("Please enter a valid registration number.", 400);
   }
 
   const roll = normalizeRollNumber(query);
@@ -46,7 +50,7 @@ export async function POST(request) {
             message:
               certDoc.status === "revoked" ?
                 "This certificate has been revoked."
-              : "No issued certificate found for this roll number.",
+              : "No issued certificate found for this registration number.",
           });
         }
         return jsonSuccess({
@@ -54,10 +58,16 @@ export async function POST(request) {
           status: "verified",
           certificate: {
             studentName: student.fullName,
+            fatherName: student.fatherName,
             rollNumber: student.rollNumber,
-            courseName: certDoc.courseName,
+            registrationNumber: student.rollNumber,
+            courseName:
+              certDoc.courseName ||
+              getCourseById(certDoc.courseId || student.courseId)?.title ||
+              student.certificateCourseName ||
+              student.courseName ||
+              "Computer Training Program",
             issueDate: certDoc.issueDate,
-            certificateNumber: certDoc.certificateNumber,
             fileUrl: certDoc.file?.url || student.certificateUrl || null,
           },
         });
@@ -73,26 +83,29 @@ export async function POST(request) {
           status: "verified",
           certificate: {
             studentName: student.fullName,
+            fatherName: student.fatherName,
             rollNumber: student.rollNumber,
+            registrationNumber: student.rollNumber,
             courseName:
               student.certificateCourseName ||
               student.courseName ||
+              getCourseById(student.courseId)?.title ||
               "Computer Training Program",
             issueDate: student.certificateIssueDate || student.updatedAt,
-            certificateNumber:
-              student.certificateNumber ||
-              `TICE-CERT-${student.rollNumber}`,
             fileUrl: student.certificateUrl,
           },
         });
       }
     }
 
-    // Also check if user entered certificate number directly
+    // Keep old certificate-number searches working for existing records.
     const directCert = await Certificate.findOne({
-      certificateNumber: query.trim().toUpperCase(),
+      certificateNumber: normalizeCertificateNumber(query),
       status: "issued",
-    }).populate("student", "fullName rollNumber archived");
+    }).populate(
+      "student",
+      "fullName fatherName rollNumber archived courseId courseName certificateCourseName",
+    );
 
     if (directCert && directCert.student && !directCert.student.archived) {
       return jsonSuccess({
@@ -100,10 +113,14 @@ export async function POST(request) {
         status: "verified",
         certificate: {
           studentName: directCert.student.fullName,
+          fatherName: directCert.student.fatherName,
           rollNumber: directCert.student.rollNumber,
-          courseName: directCert.courseName,
+          registrationNumber: directCert.student.rollNumber,
+          courseName:
+            directCert.courseName ||
+            getCourseById(directCert.courseId || directCert.student.courseId)?.title ||
+            "Computer Training Program",
           issueDate: directCert.issueDate,
-          certificateNumber: directCert.certificateNumber,
           fileUrl: directCert.file?.url || null,
         },
       });
@@ -112,7 +129,7 @@ export async function POST(request) {
     return jsonSuccess({
       found: false,
       status: "not_found",
-      message: "No certificate found for this roll number.",
+      message: "No certificate found for this registration number.",
     });
   } catch (error) {
     console.error("Certificate search error:", error.message);
