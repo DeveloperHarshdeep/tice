@@ -17,10 +17,10 @@ import { Container } from "./Container";
 import { siteConfig } from "@/lib/site-config";
 import { Button } from "@/components/ui/Button";
 
-// Exactly the requested 5 menu items: Home, Courses, Verify Certificate, Result, About
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "Courses" },
+  { href: "/typing-tutor", label: "Typing Tutor" },
   { href: "/certificate-verification", label: "Verify Certificate" },
   { href: "/results", label: "Result" },
   { href: "/about", label: "About" },
@@ -135,7 +135,7 @@ export function Header() {
           </div>
         </Link>
 
-        {/* Desktop Navigation: Exactly Home, Courses, Verify Certificate, Result, About */}
+        {/* Desktop Navigation */}
         <nav
           className="hidden items-center gap-1 lg:flex"
           aria-label="Main navigation"

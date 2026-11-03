@@ -115,6 +115,12 @@ Public search and login endpoints are rate limited. For a single server, an in-m
 - If a student has **issued certificates** or **published results**, delete requests **archive** the student (`archived: true`) instead of hard deletion.
 - Otherwise draft-linked records are removed and the student document is deleted.
 
+## Typing Tutor
+
+The anonymous, browser-based Typing Tutor is available at `/typing-tutor`. Chapter content, duration, difficulty, targets, and passages are developer-managed in `src/data/typing-chapters.js`; changes are deployed with the website. There is no Typing Tutor section in the admin dashboard and no typing chapter database collection or admin API.
+
+Practice metrics are calculated in the browser and shown on the completion screen only. Attempts, typing statistics, and personal history are not saved or sent to an API. A temporary session timestamp is kept in `sessionStorage` while a timed test is active so a page refresh does not restart its countdown; typed text and results are not stored.
+
 ## Editable content
 
 - Contact details: `src/lib/site-config.js`
