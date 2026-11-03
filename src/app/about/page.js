@@ -19,6 +19,9 @@ import {
   GraduationCap,
   Award,
   ExternalLink,
+  MapPin,
+  Navigation,
+  Phone,
 } from "lucide-react";
 
 export const metadata = {
@@ -428,6 +431,79 @@ export default function AboutPage() {
             </Card>
           </div>
         </section>
+
+        {/* Institute Location */}
+        <ScrollReveal direction="up">
+          <section aria-labelledby="location-heading">
+            <div className="mb-8 max-w-2xl">
+              <Badge tone="sky">Find Us in Ludhiana</Badge>
+              <h2
+                id="location-heading"
+                className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl"
+              >
+                Visit Our Institute
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+                Find us easily and visit our campus to explore learning
+                opportunities and discuss your career goals.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+              <div className="flex flex-col justify-center rounded-2xl border border-sky-100 bg-white p-6 shadow-sm sm:p-8">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-sky-50 text-[#0284c7]">
+                    <MapPin className="h-6 w-6" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold leading-snug text-slate-900">
+                      {siteConfig.name}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-700">
+                      {siteConfig.contact.address}
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                      Find us near Joga Industry / Satsang Ghar on Tibba Road
+                      in Ramesh Nagar. Use the map to plan your visit.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={siteConfig.location.googleMapsDirectionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Get directions to ${siteConfig.name} in Google Maps`}
+                    className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-all duration-150 hover:bg-brand-dark hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky sm:w-auto"
+                  >
+                    <Navigation className="h-4 w-4" aria-hidden="true" />
+                    Get Directions
+                  </a>
+                  <a
+                    href={`tel:+${siteConfig.contact.phone}`}
+                    aria-label={`Call ${siteConfig.name}`}
+                    className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-xs transition-all duration-150 hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky sm:w-auto"
+                  >
+                    <Phone className="h-4 w-4" aria-hidden="true" />
+                    Call Institute
+                  </a>
+                </div>
+              </div>
+
+              <div className="min-h-[320px] overflow-hidden rounded-2xl border border-sky-100 bg-slate-100 shadow-md md:min-h-[400px]">
+                <iframe
+                  src={siteConfig.location.googleMapsEmbedUrl}
+                  title={`Map showing the location of ${siteConfig.name}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                  className="h-[320px] w-full border-0 md:h-[400px]"
+                />
+              </div>
+            </div>
+          </section>
+        </ScrollReveal>
 
         {/* Section 6: Admissions Invitation */}
         <section className="relative overflow-hidden rounded-3xl border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-cyan-50/50 p-8 shadow-sm sm:p-12">
