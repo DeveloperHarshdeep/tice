@@ -6,13 +6,13 @@ export const courses = [
   {
     id: "data-analyst",
     institute: "Talent Institute & Computer Education",
-      thumbnail: "/course-images/Data-Analysis.jpg",
+    thumbnail: "/course-images/Data-Analysis.webp",
     title: "Data Analyst Course",
     shortTitle: "Data Analyst",
     level: "Beginner to Intermediate",
     duration: "6 Months",
     durationHours: "120 Hours",
-    fee: "₹3500",
+    fee: "₹35,000",
     category: "Data & Analytics",
     badge: "High Demand",
     description: "At Talent Institute & Computer Education, students learn the essential skills required to extract, analyze, and visualize complex data. This comprehensive program walks you through the complete data lifecycle, providing you with practical expertise in top industry tools.",
@@ -93,7 +93,7 @@ export const courses = [
   {
     id: "web-designing",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/web-designing.jpg",
+    thumbnail: "/course-images/web-designing.webp",
     title: "Web Designing Course",
     shortTitle: "Web Design",
     level: "Beginner to Intermediate",
@@ -180,7 +180,7 @@ export const courses = [
   {
     id: "tally-prime-gst",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Tally.jpg",
+    thumbnail: "/course-images/Tally.webp",
     title: "Tally Prime with GST",
     shortTitle: "Tally Prime",
     level: "Beginner",
@@ -258,7 +258,7 @@ export const courses = [
   {
     id: "python-programming",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Python.jpg",
+    thumbnail: "/course-images/Python.webp",
     title: "Python Programming Course",
     shortTitle: "Python",
     level: "Beginner",
@@ -336,7 +336,7 @@ export const courses = [
   {
     id: "advanced-excel",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Advanced-Excel.jpg",
+    thumbnail: "/course-images/Advanced-Excel.webp",
     title: "Advanced Microsoft Excel",
     shortTitle: "Adv. Excel",
     level: "Intermediate",
@@ -414,7 +414,7 @@ export const courses = [
   {
     id: "video-editing-filmora",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Video-editing.jpg",
+    thumbnail: "/course-images/Video-editing.webp",
     title: "Video Editing with Filmora",
     shortTitle: "Filmora Editing",
     level: "Beginner",
@@ -492,7 +492,7 @@ export const courses = [
   {
     id: "coreldraw-design",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/corel.jpg",
+    thumbnail: "/course-images/corel.webp",
     title: "CorelDRAW Graphic Design",
     shortTitle: "CorelDRAW",
     level: "Beginner",
@@ -570,7 +570,7 @@ export const courses = [
   {
     id: "adobe-photoshop",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Photoshop.jpg",
+    thumbnail: "/course-images/Photoshop.webp",
     title: "Adobe Photoshop",
     shortTitle: "Photoshop",
     level: "Beginner",
@@ -648,7 +648,7 @@ export const courses = [
   {
     id: "ai-tools-productivity",
     institute: "Talent Institute & Computer Education",
-    thumbnail: "/course-images/Ai.jpg",
+    thumbnail: "/course-images/Ai.webp",
     title: "AI Tools & Productivity Course",
     shortTitle: "AI Tools",
     level: "Beginner to Intermediate",

@@ -373,6 +373,7 @@ export function TypingPractice({ chapterId }) {
 
   useEffect(() => {
     function handleKeyUp(event) {
+      if (event.code === "Minus") setBranded(false);
       setPressedCodes((current) => {
         if (!current.has(event.code)) return current;
         const next = new Set(current);
@@ -381,7 +382,10 @@ export function TypingPractice({ chapterId }) {
       });
     }
     function handleVisibility() {
-      if (document.visibilityState === "hidden") setPressedCodes(new Set());
+      if (document.visibilityState === "hidden") {
+        setPressedCodes(new Set());
+        setBranded(false);
+      }
     }
     window.addEventListener("keyup", handleKeyUp);
     document.addEventListener("visibilitychange", handleVisibility);
@@ -461,7 +465,7 @@ export function TypingPractice({ chapterId }) {
       if (isOtherControl) return;
 
       if (event.code === "Minus" && event.key === "-") {
-        setBranded((current) => !current);
+        setBranded(true);
       }
 
       if (event.code) {
@@ -814,7 +818,22 @@ export function TypingPractice({ chapterId }) {
             <span className="hidden text-[10px] text-slate-500 sm:inline">
               Incorrect keys are highlighted in red
             </span>
-            {branded && <Badge tone="aqua" className="!px-1.5 !py-0 !text-[9px]">HD Web Studios</Badge>}
+            {branded && (
+              <a
+                href="https://hdwebstudios.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
+                aria-label="Visit HD Web Studios website"
+              >
+                <Badge
+                  tone="aqua"
+                  className="!px-1.5 !py-0 !text-[9px] transition-colors hover:bg-cyan-100"
+                >
+                  Harshdeep · HD Web Studios
+                </Badge>
+              </a>
+            )}
           </div>
         </div>
         <VirtualKeyboard

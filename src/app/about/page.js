@@ -26,7 +26,7 @@ import {
 
 export const metadata = {
   title: "About the Institute in Ludhiana",
-  description: `${siteConfig.name} (TICE) has ${siteConfig.experienceYears} years of institutional experience in Ludhiana. Learn about its teaching approach and instructor.`,
+  description: `Meet ${siteConfig.teacher.name}, owner and lead instructor at ${siteConfig.name} (TICE), and explore the institute's practical teaching approach and professional course certificates.`,
   alternates: {
     canonical: `${getMetadataBase().origin}/about`,
   },
@@ -45,10 +45,17 @@ const officialCertificates = [
     title: "Udyam Registration Certificate",
     description:
       "Official Udyam registration document for the institute. View the certificate image for the registration details.",
-    image: "/official/Udyam.jpeg",
+    image: "/official/Udyam.webp",
     alt: "Udyam Registration Certificate of the institute",
     category: "Official Registration",
   },
+];
+
+const ownerCertificates = [
+  { title: "Data Analyst", image: "/official/AI_Data_Analyst.webp" },
+  { title: "SQL Mastery", image: "/official/SQL_Mastery.webp" },
+  { title: "Excel Mastery", image: "/official/Excel_Mastery.webp" },
+  { title: "Power BI Mastery", image: "/official/PowerBI_Mastery.webp" },
 ];
 
 export default function AboutPage() {
@@ -56,7 +63,7 @@ export default function AboutPage() {
     <PublicShell>
       <PageHeader
         title={`About ${siteConfig.name}`}
-        subtitle={`${siteConfig.name} (TICE) is a computer education institute in Ludhiana, Punjab, with ${siteConfig.experienceYears} years of institutional experience. ${siteConfig.teacher.name} brings ${siteConfig.teacher.qualification} qualifications and ${siteConfig.teacher.experience} to practical computer education.`}
+        subtitle={`${siteConfig.name} (TICE) offers practical computer education in Ludhiana. Meet owner and lead instructor ${siteConfig.teacher.name}, and learn about the institute's hands-on approach and his professional course certifications.`}
         badgeText="Institute Overview"
         badgeTone="sky"
         breadcrumbs={[{ label: "About" }]}
@@ -99,11 +106,12 @@ export default function AboutPage() {
               </p>
 
               <p className="text-sm leading-relaxed text-slate-600">
-                For two decades, Talent Institute &amp; Computer Education has
-                provided computer education in Ludhiana. The institute focuses
-                on structured learning and practical computer use, with
-                coursework ranging from office applications and accounting
-                software to programming and design.
+                With {siteConfig.experienceYears} years of institutional
+                experience, Talent Institute &amp; Computer Education helps
+                learners build practical, job-ready computer skills in
+                Ludhiana. Owner and lead instructor {siteConfig.teacher.name}
+                {" "}supports students through structured lessons, hands-on lab
+                practice, and guidance grounded in real-world tools.
               </p>
 
               <div className="pt-2">
@@ -211,7 +219,58 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Section 3: Official Certificates */}
+        {/* Section 3: Owner Course Certificates */}
+        <section aria-labelledby="owner-certificates-heading">
+          <div className="mb-8 max-w-3xl">
+            <Badge tone="aqua">Owner &amp; Lead Instructor</Badge>
+            <h2
+              id="owner-certificates-heading"
+              className="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
+            >
+              {siteConfig.teacher.name}&apos;s Course Certificates
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+              Certificates for courses completed by {siteConfig.teacher.name}
+              {" "}in data analysis, SQL, Excel, and Power BI. Select a
+              certificate to view it at full size.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {ownerCertificates.map((certificate) => (
+              <Card
+                key={certificate.title}
+                className="overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm"
+              >
+                <a
+                  href={certificate.image}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View ${certificate.title} certificate for ${siteConfig.teacher.name} at full size`}
+                  className="relative block aspect-[1.42/1] w-full border-b border-sky-100 bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-600"
+                >
+                  <Image
+                    src={certificate.image}
+                    alt={`${certificate.title} certificate for ${siteConfig.teacher.name}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                    className="object-contain p-2"
+                  />
+                </a>
+                <div className="p-4">
+                  <h3 className="font-bold text-slate-900">
+                    {certificate.title}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Course completed by {siteConfig.teacher.name}
+                  </p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Section 4: Official Certificates */}
         <section
           aria-labelledby="certificates-heading"
           id="official-certificates"
@@ -225,9 +284,8 @@ export default function AboutPage() {
               Official Certificates & Registration
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
-              View the institute&apos;s official registration documentation.
-              We believe in presenting relevant institutional records
-              transparently.
+              View the institute&apos;s official registration documentation
+              alongside the owner&apos;s professional course certificates.
             </p>
           </div>
 
@@ -300,7 +358,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Section 4: Laboratory Environment */}
+        {/* Section 5: Laboratory Environment */}
         <section aria-labelledby="facility-heading">
           <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
             <div className="order-2 lg:order-1 lg:col-span-6">
@@ -377,7 +435,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Section 5: Faculty & Mentorship */}
+        {/* Section 6: Faculty & Mentorship */}
         <section aria-labelledby="faculty-heading">
           <div className="mb-10 max-w-2xl">
             <Badge tone="aqua">Teaching Mentors</Badge>
@@ -388,8 +446,11 @@ export default function AboutPage() {
               Faculty & Instructors
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Computer courses at TICE are taught by {siteConfig.teacher.name},
-              bringing a {siteConfig.teacher.qualification} background and {siteConfig.teacher.experience} to classroom guidance.
+              Owner and lead instructor {siteConfig.teacher.name} brings a
+              {" "}{siteConfig.teacher.qualification} background,
+              {` ${siteConfig.teacher.experience.toLowerCase()}`}, and
+              additional course training in data analysis, SQL, Excel, and
+              Power BI.
             </p>
           </div>
 
@@ -406,7 +467,7 @@ export default function AboutPage() {
 
             <Card className="border-sky-100 bg-white p-6 shadow-xs">
               <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-800">
-                Teacher &amp; Instructor
+                Owner &amp; Lead Instructor
               </span>
               <h3 className="mt-3 text-base font-bold text-slate-900">
                 {siteConfig.teacher.name}
@@ -415,9 +476,12 @@ export default function AboutPage() {
                 {siteConfig.teacher.qualification} | {siteConfig.teacher.experience}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                With a {siteConfig.teacher.qualification} qualification and {siteConfig.teacher.experience},
-                {" "}{siteConfig.teacher.name} focuses on practical computer education that helps students build
-                valuable skills for academic and professional growth.
+                Alongside a {siteConfig.teacher.qualification} qualification
+                and {siteConfig.teacher.experience.toLowerCase()},
+                {" "}{siteConfig.teacher.name} has completed courses in data
+                analysis, SQL, Excel, and Power BI. He focuses on practical
+                computer education that helps students build useful skills for
+                academic and professional growth.
               </p>
               <Button
                 href="/courses"

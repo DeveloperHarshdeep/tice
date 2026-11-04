@@ -124,7 +124,7 @@ export const siteImages = {
       height: 800,
     },
     faculty1: {
-      url: "/images/teacher.jpeg",
+      url: "/images/teacher.webp",
       alt: "Mr. Sandeep Kumar, computer education teacher and instructor at Talent Institute & Computer Education",
       width: 600,
       height: 600,

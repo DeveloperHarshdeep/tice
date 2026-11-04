@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +14,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  CircleHelp,
 } from "lucide-react";
 import { siteConfig } from "@/lib/site-config";
 
@@ -29,11 +31,13 @@ function TiceLogo({ size = "md" }) {
 
   return (
     <span
-      className={`flex ${sizeClasses} shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white`}
+      className={`relative flex ${sizeClasses} shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white`}
     >
-      <img
-        src="/tice_logo.png"
+      <Image
+        src="/tice_logo.webp"
         alt="Talent Institute & Computer Education logo"
+        fill
+        sizes={size === "lg" ? "(max-width: 640px) 48px, 56px" : "36px"}
         className="block h-full w-full object-contain"
       />
     </span>
@@ -44,6 +48,7 @@ export function AdminSidebar({ sessionUser }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showDeveloperContact, setShowDeveloperContact] = useState(false);
 
   async function logout() {
     try {
@@ -185,6 +190,27 @@ export function AdminSidebar({ sessionUser }) {
               Public Website
             </span>
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setShowDeveloperContact((visible) => !visible)}
+            aria-expanded={showDeveloperContact}
+            aria-controls="admin-developer-contact"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          >
+            <CircleHelp className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+            Developer help
+          </button>
+          {showDeveloperContact && (
+            <a
+              id="admin-developer-contact"
+              href={`tel:${siteConfig.developer.phone}`}
+              className="ml-3 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900 hover:bg-sky-100"
+              aria-label={`Call developer at ${siteConfig.developer.phone}`}
+            >
+              Developer: {siteConfig.developer.phone}
+            </a>
+          )}
 
           <button
             type="button"

@@ -363,7 +363,7 @@ export function HeroSection() {
               {!photoUnavailable ? (
 
                 <Image
-                  src="/images/teacher.jpeg"
+                  src="/images/teacher.webp"
                   alt={`${teacher.name}, ${teacher.role} at ${siteConfig.name}`}
                   fill
                   priority
