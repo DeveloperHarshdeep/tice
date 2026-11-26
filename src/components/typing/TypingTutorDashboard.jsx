@@ -34,8 +34,8 @@ export function TypingTutorDashboard() {
             Typing Tutor
           </h1>
           <p className="mt-1 text-xs leading-5 text-slate-600 sm:text-sm">
-            Build accuracy and speed with guided lessons. Every practice
-            chapter has a 10-minute timer and multiple passages.
+            Build accuracy and speed with guided lessons in English, Hindi, or Punjabi.
+            Choose a chapter, verified typing system, and practice duration before starting.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 self-start rounded-xl border border-sky-100 bg-white px-4 py-3 sm:self-center">
@@ -63,7 +63,7 @@ export function TypingTutorDashboard() {
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
             <Clock3 className="h-3.5 w-3.5" aria-hidden />
-            10 minutes per chapter
+            Custom practice duration
           </span>
         </div>
 

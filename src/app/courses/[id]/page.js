@@ -84,7 +84,7 @@ export default async function CourseDetailPage({ params }) {
 
   // Find the first valid course image.
   // Supports both string paths and { url, alt } objects.
-  const fallbackImage = "/course-images/Data-analyst.jpeg";
+  const fallbackImage = "/course-images/Data-analyst.webp";
 
   const imageCandidates = [
     course.thumbnail,

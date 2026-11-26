@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -16,133 +23,94 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { calculateTypingPerformance } from "@/lib/typing-metrics";
 import { typingChapters } from "@/data/typing-chapters";
+import {
+  getTypingSystemsForLanguage,
+  normalizeTypingSystemId,
+  typingSystems,
+  typingLanguages,
+  validateTypingSystem,
+} from "@/data/typing-layouts";
+import { getExpectedCodes, getMappedOutput } from "@/data/keyboard-layouts";
+import { convertAnmolInput } from "@/data/typing/converters/anmol";
 
-const keyboardRows = [
-  [
-    { code: "Escape", label: "Esc", width: 1.4 },
-    { code: "F1", label: "F1" },
-    { code: "F2", label: "F2" },
-    { code: "F3", label: "F3" },
-    { code: "F4", label: "F4" },
-    { code: "F5", label: "F5" },
-    { code: "F6", label: "F6" },
-    { code: "F7", label: "F7" },
-    { code: "F8", label: "F8" },
-    { code: "F9", label: "F9" },
-    { code: "F10", label: "F10" },
-    { code: "F11", label: "F11" },
-    { code: "F12", label: "F12" },
-    { code: "PrintScreen", label: "PrtSc" },
-    { code: "ScrollLock", label: "ScrLk" },
-    { code: "Pause", label: "Pause" },
-  ],
-  [
-    { code: "Backquote", label: "` ~" },
-    ...["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((digit) => ({
-      code: `Digit${digit}`,
-      label: `${digit} ${")!@#$%^&*("[Number(digit) % 10]}`,
-    })),
-    { code: "Minus", label: "- _" },
-    { code: "Equal", label: "= +" },
-    { code: "Backspace", label: "Backspace", width: 2.2 },
-  ],
-  [
-    { code: "Tab", label: "Tab", width: 1.7 },
-    ...[..."qwertyuiop"].map((letter) => ({
-      code: `Key${letter.toUpperCase()}`,
-      label: letter,
-    })),
-    { code: "BracketLeft", label: "[ {" },
-    { code: "BracketRight", label: "] }" },
-    { code: "Backslash", label: "\\ |", width: 1.5 },
-  ],
-  [
-    { code: "CapsLock", label: "Caps", width: 2 },
-    ...[..."asdfghjkl"].map((letter) => ({
-      code: `Key${letter.toUpperCase()}`,
-      label: letter,
-    })),
-    { code: "Semicolon", label: "; :" },
-    { code: "Quote", label: "' \"" },
-    { code: "Enter", label: "Enter", width: 2.1 },
-  ],
-  [
-    { code: "ShiftLeft", label: "Shift", width: 2.8 },
-    ...[..."zxcvbnm"].map((letter) => ({
-      code: `Key${letter.toUpperCase()}`,
-      label: letter,
-    })),
-    { code: "Comma", label: ", <" },
-    { code: "Period", label: ". >" },
-    { code: "Slash", label: "/ ?", width: 1.4 },
-    { code: "ShiftRight", label: "Shift", width: 2.8 },
-  ],
-  [
-    { code: "ControlLeft", label: "Ctrl", width: 1.5 },
-    { code: "MetaLeft", label: "Win", width: 1.4 },
-    { code: "AltLeft", label: "Alt", width: 1.4 },
-    { code: "Space", label: "Space", width: 6 },
-    { code: "AltRight", label: "Alt", width: 1.4 },
-    { code: "ContextMenu", label: "Menu", width: 1.4 },
-    { code: "ControlRight", label: "Ctrl", width: 1.5 },
-  ],
-];
+const TYPING_SYSTEM_STORAGE_KEY = "tice-typing-system-id";
+const typingSystemListeners = new Set();
 
-const shiftedKeyCodes = {
-  "!": "Digit1",
-  "@": "Digit2",
-  "#": "Digit3",
-  "$": "Digit4",
-  "%": "Digit5",
-  "^": "Digit6",
-  "&": "Digit7",
-  "*": "Digit8",
-  "(": "Digit9",
-  ")": "Digit0",
-  _: "Minus",
-  "+": "Equal",
-  "{": "BracketLeft",
-  "}": "BracketRight",
-  "|": "Backslash",
-  ":": "Semicolon",
-  '"': "Quote",
-  "<": "Comma",
-  ">": "Period",
-  "?": "Slash",
-  "~": "Backquote",
-};
-
-function expectedCodes(character) {
-  if (!character) return [];
-  if (character === " ") return ["Space"];
-  if (character === "\n") return ["Enter"];
-  if (/^[a-z]$/i.test(character)) {
-    const codes = [`Key${character.toUpperCase()}`];
-    if (character !== character.toLowerCase()) codes.unshift("ShiftLeft");
-    return codes;
+function subscribeToTypingSystem(listener) {
+  typingSystemListeners.add(listener);
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", listener);
   }
-  if (shiftedKeyCodes[character]) {
-    return ["ShiftLeft", shiftedKeyCodes[character]];
-  }
-  const punctuationCodes = {
-    "`": "Backquote",
-    "-": "Minus",
-    "=": "Equal",
-    "[": "BracketLeft",
-    "]": "BracketRight",
-    "\\": "Backslash",
-    ";": "Semicolon",
-    "'": "Quote",
-    ",": "Comma",
-    ".": "Period",
-    "/": "Slash",
+  return () => {
+    typingSystemListeners.delete(listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", listener);
+    }
   };
-  return punctuationCodes[character] ? [punctuationCodes[character]] : [];
+}
+
+function getTypingSystemSnapshot() {
+  if (typeof window === "undefined") return "stored:";
+  try {
+    return `stored:${window.sessionStorage.getItem(TYPING_SYSTEM_STORAGE_KEY) || ""}`;
+  } catch {
+    return "unavailable:";
+  }
+}
+
+function getServerTypingSystemSnapshot() {
+  return "stored:";
+}
+
+function persistTypingSystem(typingSystemId) {
+  try {
+    if (typingSystemId) {
+      window.sessionStorage.setItem(
+        TYPING_SYSTEM_STORAGE_KEY,
+        typingSystemId,
+      );
+    } else {
+      window.sessionStorage.removeItem(TYPING_SYSTEM_STORAGE_KEY);
+    }
+    return true;
+  } catch {
+    return false;
+  } finally {
+    typingSystemListeners.forEach((listener) => listener());
+  }
 }
 
 function formatTime(milliseconds) {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function normalizeTypedText(text, typingSystem) {
+  const normalization = typingSystem?.normalization;
+  if (normalization && typeof text.normalize === "function") {
+    return text.normalize(normalization);
+  }
+  return text;
+}
+
+function segmentText(text) {
+  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+    return Array.from(
+      new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text),
+    ).map((part) => part.segment);
+  }
+  return Array.from(text);
+}
+
+function getCompletedGraphemes(units, codePointCount) {
+  let completed = 0;
+  let offset = 0;
+  for (const unit of units) {
+    offset += Array.from(unit).length;
+    if (offset > codePointCount) break;
+    completed += 1;
+  }
+  return completed;
 }
 
 function KeyboardKey({
@@ -158,7 +126,40 @@ function KeyboardKey({
     KeyS: "Studios",
     KeyA: "Harshdeep",
   };
-  const label = branded && brandLabels[keyInfo.code] ? brandLabels[keyInfo.code] : keyInfo.label;
+  const baseLabel =
+    branded && brandLabels[keyInfo.code]
+      ? brandLabels[keyInfo.code]
+      : keyInfo.label || keyInfo.unshifted || keyInfo.code;
+  const hasOutputLayers =
+    keyInfo.normal !== undefined ||
+    keyInfo.shift !== undefined ||
+    keyInfo.altGr !== undefined ||
+    keyInfo.shiftAltGr !== undefined;
+  const hasAltGrLayer =
+    keyInfo.altGr !== undefined || keyInfo.shiftAltGr !== undefined;
+  const label =
+    hasOutputLayers
+      ? (
+          <span className="grid h-full w-full grid-cols-2 grid-rows-2 items-center justify-items-center leading-none">
+            <span className={`text-[8px] text-slate-500 ${hasAltGrLayer ? "" : "col-span-2"}`}>
+              {keyInfo.shift || keyInfo.shifted || ""}
+            </span>
+            {hasAltGrLayer && (
+              <span className="text-[7px] text-slate-400">
+                {keyInfo.shiftAltGr || ""}
+              </span>
+            )}
+            <span className={hasAltGrLayer ? "" : "col-span-2"}>
+              {keyInfo.normal || keyInfo.unshifted || ""}
+            </span>
+            {hasAltGrLayer && (
+              <span className="text-[7px] text-slate-400">
+                {keyInfo.altGr || ""}
+              </span>
+            )}
+          </span>
+        )
+      : baseLabel;
   const isBrandKey = branded && Boolean(brandLabels[keyInfo.code]);
   const stateClass = pressed
     ? "translate-y-0.5 border-sky-600 bg-sky-600 text-white shadow-inner"
@@ -185,7 +186,7 @@ function KeyboardKey({
   );
 }
 
-function VirtualKeyboard({ expected, pressedCodes, feedback, branded }) {
+function VirtualKeyboard({ expected, pressedCodes, feedback, branded, rows }) {
   const expectedSet = useMemo(() => new Set(expected), [expected]);
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-100/70 p-1.5 sm:p-2">
@@ -194,7 +195,7 @@ function VirtualKeyboard({ expected, pressedCodes, feedback, branded }) {
         aria-label="Virtual keyboard"
         aria-hidden="true"
       >
-        {keyboardRows.map((row, rowIndex) => (
+        {rows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-0.5 sm:gap-1">
             {row.map((keyInfo) => (
               <KeyboardKey
@@ -234,8 +235,25 @@ function MetricCard({ label, value, helper, icon: Icon }) {
 
 export function TypingPractice({ chapterId }) {
   const chapter = typingChapters.find((item) => item.id === chapterId) || null;
-  const [ready, setReady] = useState(false);
+  const savedSystemSnapshot = useSyncExternalStore(
+    subscribeToTypingSystem,
+    getTypingSystemSnapshot,
+    getServerTypingSystemSnapshot,
+  );
+  const storedSystemId = savedSystemSnapshot.startsWith("stored:")
+    ? savedSystemSnapshot.slice("stored:".length) || null
+    : null;
+  const savedSystemId = storedSystemId
+    ? normalizeTypingSystemId(storedSystemId)
+    : null;
+  const savedSystemUnknown =
+    Boolean(savedSystemId) && !typingSystems[savedSystemId];
+  const [localSelection, setLocalSelection] = useState(null);
+  const [testStarted, setTestStarted] = useState(false);
+  const [pendingLanguageId, setPendingLanguageId] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState(chapter?.durationMinutes || 10);
   const [typed, setTyped] = useState("");
+  const [inputSequence, setInputSequence] = useState("");
   const [paragraphIndex, setParagraphIndex] = useState(0);
   const [activity, setActivity] = useState({
     correct: 0,
@@ -252,11 +270,12 @@ export function TypingPractice({ chapterId }) {
   const [feedback, setFeedback] = useState(null);
   const [branded, setBranded] = useState(false);
   const [cursorIndex, setCursorIndex] = useState(0);
-  const [storageWarning, setStorageWarning] = useState(false);
-  const [sessionRestored, setSessionRestored] = useState(false);
+  const [storageWriteFailed, setStorageWriteFailed] = useState(false);
+  const [selectionError, setSelectionError] = useState("");
 
   const inputRef = useRef(null);
   const typedRef = useRef("");
+  const inputSequenceRef = useRef("");
   const activityRef = useRef({
     correct: 0,
     incorrect: 0,
@@ -267,14 +286,77 @@ export function TypingPractice({ chapterId }) {
   const finishedRef = useRef(false);
   const cursorRef = useRef(null);
   const viewportRef = useRef(null);
-  const timerKey = `tice-typing-session:${chapterId}`;
-
-  const activeParagraph = chapter?.paragraphs?.[paragraphIndex] || "";
-  const allParagraphsText = useMemo(
-    () => chapter?.paragraphs?.join("") || "",
-    [chapter],
+  const typingSystemId =
+    localSelection === null
+      ? savedSystemUnknown
+        ? null
+        : savedSystemId
+      : localSelection.id;
+  const activeTypingSystem = typingSystemId ? typingSystems[typingSystemId] : null;
+  const setupLanguageId =
+    activeTypingSystem?.language || pendingLanguageId || "";
+  const selectedFont = activeTypingSystem?.font || null;
+  const storageWarning =
+    savedSystemSnapshot.startsWith("unavailable:") || storageWriteFailed;
+  const setupSystems = getTypingSystemsForLanguage(setupLanguageId);
+  const practiceParagraphs = useMemo(
+    () => {
+      if (!activeTypingSystem || !chapter) return [];
+      if (activeTypingSystem.paragraphSource === "chapter") {
+        return chapter.paragraphs || [];
+      }
+      if (activeTypingSystem.paragraphSource === "system-chapter") {
+        return activeTypingSystem.paragraphs?.[chapter.id] || [];
+      }
+      return [];
+    },
+    [activeTypingSystem, chapter],
   );
-  const durationMs = 10 * 60_000;
+  const activeParagraphData = practiceParagraphs[paragraphIndex] || "";
+  const activeParagraph =
+    activeTypingSystem?.inputMode === "custom-conversion"
+      ? activeParagraphData.text || ""
+      : activeParagraphData;
+  const activeInputText =
+    activeTypingSystem?.inputMode === "custom-conversion"
+      ? activeParagraphData.input || ""
+      : activeParagraph;
+  const activeParagraphUnits = useMemo(
+    () => segmentText(normalizeTypedText(activeParagraph, activeTypingSystem)),
+    [activeParagraph, activeTypingSystem],
+  );
+  const activeParagraphCodePoints = useMemo(
+    () => Array.from(normalizeTypedText(activeParagraph, activeTypingSystem)),
+    [activeParagraph, activeTypingSystem],
+  );
+  const paragraphUnitsWithOffsets = useMemo(
+    () =>
+      activeParagraphUnits.map((character, index) => {
+        const start = activeParagraphUnits
+          .slice(0, index)
+          .reduce((offset, unit) => offset + Array.from(unit).length, 0);
+        return {
+          character,
+          start,
+          end: start + Array.from(character).length,
+        };
+      }),
+    [activeParagraphUnits],
+  );
+  const typedCodePoints = useMemo(
+    () => Array.from(normalizeTypedText(typed, activeTypingSystem)),
+    [activeTypingSystem, typed],
+  );
+  const allParagraphsText = useMemo(
+    () =>
+      practiceParagraphs
+        .map((paragraph) =>
+          typeof paragraph === "string" ? paragraph : paragraph.text,
+        )
+        .join(""),
+    [practiceParagraphs],
+  );
+  const durationMs = durationMinutes * 60_000;
 
   const finishTest = useCallback(
     (reason) => {
@@ -301,61 +383,13 @@ export function TypingPractice({ chapterId }) {
         totalDuration: durationMs,
       });
       setFinished(true);
-      try {
-        window.sessionStorage.removeItem(timerKey);
-      } catch {
-        setStorageWarning(true);
-      }
     },
-    [allParagraphsText, chapter, durationMs, timerKey],
+    [allParagraphsText, chapter, durationMs],
   );
 
   useEffect(() => {
-    if (!chapter) return;
-    let active = true;
-    const timerId = window.setTimeout(() => {
-      if (!active) return;
-      try {
-        const saved = window.sessionStorage.getItem(timerKey);
-        if (saved) {
-          const session = JSON.parse(saved);
-          const valid =
-            session.chapterId === chapterId &&
-            Number.isFinite(session.startedAt) &&
-            session.durationMs === durationMs;
-          if (valid) {
-            startedAtRef.current = session.startedAt;
-            setStartedAt(session.startedAt);
-            setReady(true);
-            setSessionRestored(true);
-            setElapsedMs(Math.min(Date.now() - session.startedAt, durationMs));
-            setRemainingMs(
-              Math.max(0, durationMs - (Date.now() - session.startedAt)),
-            );
-          } else {
-            window.sessionStorage.removeItem(timerKey);
-            setReady(true);
-            setRemainingMs(durationMs);
-          }
-        } else {
-          setReady(true);
-          setRemainingMs(durationMs);
-        }
-      } catch {
-        setStorageWarning(true);
-        setReady(true);
-        setRemainingMs(durationMs);
-      }
-    }, 0);
-    return () => {
-      active = false;
-      window.clearTimeout(timerId);
-    };
-  }, [chapter, chapterId, durationMs, timerKey]);
-
-  useEffect(() => {
-    if (ready && !finished) inputRef.current?.focus();
-  }, [finished, ready]);
+    if (testStarted && !finished) inputRef.current?.focus();
+  }, [finished, testStarted]);
 
   useEffect(() => {
     if (!startedAt || finished) return undefined;
@@ -373,6 +407,7 @@ export function TypingPractice({ chapterId }) {
 
   useEffect(() => {
     function handleKeyUp(event) {
+      if (event.code === "Minus") setBranded(false);
       setPressedCodes((current) => {
         if (!current.has(event.code)) return current;
         const next = new Set(current);
@@ -381,7 +416,10 @@ export function TypingPractice({ chapterId }) {
       });
     }
     function handleVisibility() {
-      if (document.visibilityState === "hidden") setPressedCodes(new Set());
+      if (document.visibilityState === "hidden") {
+        setPressedCodes(new Set());
+        setBranded(false);
+      }
     }
     window.addEventListener("keyup", handleKeyUp);
     document.addEventListener("visibilitychange", handleVisibility);
@@ -419,7 +457,7 @@ export function TypingPractice({ chapterId }) {
         behavior: "smooth",
       });
     }
-  }, [activeParagraph.length, cursorIndex, paragraphIndex, typed.length]);
+  }, [activeParagraphUnits.length, cursorIndex, paragraphIndex, typed.length]);
 
   useEffect(() => {
     if (!feedback) return undefined;
@@ -427,29 +465,13 @@ export function TypingPractice({ chapterId }) {
     return () => window.clearTimeout(timeoutId);
   }, [feedback]);
 
-  const startTimer = useCallback(() => {
-    if (!startedAtRef.current) {
-      const started = Date.now();
-      startedAtRef.current = started;
-      setStartedAt(started);
-      setElapsedMs(0);
-      setRemainingMs(durationMs);
-      try {
-        window.sessionStorage.setItem(
-          timerKey,
-          JSON.stringify({ chapterId, startedAt: started, durationMs }),
-        );
-      } catch {
-        setStorageWarning(true);
-      }
-    }
-  }, [chapterId, durationMs, timerKey]);
-
   useEffect(() => {
-    if (!ready || finished || !chapter) return undefined;
+    if (!testStarted || finished || !chapter || !activeTypingSystem) {
+      return undefined;
+    }
 
     function handlePracticeKeyDown(event) {
-      if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) {
+      if (event.isComposing || event.metaKey || event.ctrlKey && !event.altKey) {
         return;
       }
 
@@ -461,7 +483,7 @@ export function TypingPractice({ chapterId }) {
       if (isOtherControl) return;
 
       if (event.code === "Minus" && event.key === "-") {
-        setBranded((current) => !current);
+        setBranded(true);
       }
 
       if (event.code) {
@@ -470,17 +492,65 @@ export function TypingPractice({ chapterId }) {
 
       if (event.key === "Backspace") {
         event.preventDefault();
+        if (activeTypingSystem.inputMode === "custom-conversion") {
+          const currentInput = inputSequenceRef.current;
+          if (!currentInput.length) return;
+          const nextInput = currentInput.slice(0, -1);
+          const convertedInput = normalizeTypedText(
+            convertAnmolInput(nextInput),
+            activeTypingSystem,
+          );
+          const pendingCorrectInput =
+            activeInputText.startsWith(nextInput) &&
+            !activeParagraph.startsWith(convertedInput);
+          const nextValue = pendingCorrectInput ? "" : convertedInput;
+          const currentCursor = Array.from(
+            normalizeTypedText(typedRef.current, activeTypingSystem),
+          ).length;
+          const nextCursor = Array.from(nextValue).length;
+          inputSequenceRef.current = nextInput;
+          setInputSequence(nextInput);
+          typedRef.current = nextValue;
+          setTyped(nextValue);
+          setCursorIndex(nextCursor);
+          const nextActivity = {
+            ...activityRef.current,
+            completedCharacters: Math.max(
+              0,
+              activityRef.current.completedCharacters +
+                getCompletedGraphemes(activeParagraphUnits, nextCursor) -
+                getCompletedGraphemes(activeParagraphUnits, currentCursor),
+            ),
+          };
+          activityRef.current = nextActivity;
+          setActivity(nextActivity);
+          return;
+        }
+
         const current = typedRef.current;
         if (!current.length) return;
-        const nextValue = current.slice(0, -1);
+        const units = segmentText(normalizeTypedText(current, activeTypingSystem));
+        units.pop();
+        const nextValue = units.join("");
+        const currentCursor = Array.from(
+          normalizeTypedText(current, activeTypingSystem),
+        ).length;
+        const nextCursor = Array.from(
+          normalizeTypedText(nextValue, activeTypingSystem),
+        ).length;
         typedRef.current = nextValue;
         setTyped(nextValue);
-        setCursorIndex(nextValue.length);
+        setCursorIndex(nextCursor);
         const nextActivity = {
           ...activityRef.current,
           completedCharacters: Math.max(
             0,
-            activityRef.current.completedCharacters - 1,
+            activityRef.current.completedCharacters -
+              (getCompletedGraphemes(activeParagraphUnits, currentCursor) -
+                getCompletedGraphemes(
+                  activeParagraphUnits,
+                  nextCursor,
+                )),
           ),
         };
         activityRef.current = nextActivity;
@@ -488,34 +558,118 @@ export function TypingPractice({ chapterId }) {
         return;
       }
 
-      if (event.key.length !== 1) return;
+      if (
+        activeTypingSystem.keyboardLayout.keyInputMode === "browser-key" &&
+        event.key.length !== 1
+      ) {
+        return;
+      }
+      const mappedCharacter = getMappedOutput(event, activeTypingSystem);
+      if (!mappedCharacter || mappedCharacter.length === 0) return;
       event.preventDefault();
-      startTimer();
+
+      if (activeTypingSystem.inputMode === "custom-conversion") {
+        const inputCursor = inputSequenceRef.current.length;
+        if (inputCursor >= activeInputText.length) return;
+        const expectedInput = activeInputText[inputCursor];
+        const isCorrect = mappedCharacter === expectedInput;
+        const nextInput = `${inputSequenceRef.current}${mappedCharacter}`;
+        const convertedInput = normalizeTypedText(
+          convertAnmolInput(nextInput),
+          activeTypingSystem,
+        );
+        const pendingCorrectInput =
+          activeInputText.startsWith(nextInput) &&
+          !activeParagraph.startsWith(convertedInput);
+        const nextValue = pendingCorrectInput
+          ? typedRef.current
+          : convertedInput;
+        const previousCursor = Array.from(
+          normalizeTypedText(typedRef.current, activeTypingSystem),
+        ).length;
+        const nextCursor = Array.from(nextValue).length;
+        const nextActivity = {
+          ...activityRef.current,
+          total: activityRef.current.total + 1,
+          correct: activityRef.current.correct + (isCorrect ? 1 : 0),
+          incorrect: activityRef.current.incorrect + (isCorrect ? 0 : 1),
+          completedCharacters: Math.max(
+            0,
+            activityRef.current.completedCharacters +
+              getCompletedGraphemes(activeParagraphUnits, nextCursor) -
+              getCompletedGraphemes(activeParagraphUnits, previousCursor),
+          ),
+        };
+        activityRef.current = nextActivity;
+        setActivity(nextActivity);
+        setFeedback({
+          code: event.code,
+          type: isCorrect ? "correct" : "incorrect",
+        });
+        inputSequenceRef.current = nextInput;
+        setInputSequence(nextInput);
+        typedRef.current = nextValue;
+        setTyped(nextValue);
+        setCursorIndex(nextCursor);
+
+        if (nextInput.length === activeInputText.length) {
+          const nextIndex = (paragraphIndex + 1) % practiceParagraphs.length;
+          inputSequenceRef.current = "";
+          typedRef.current = "";
+          setInputSequence("");
+          setTyped("");
+          setCursorIndex(0);
+          setParagraphIndex(nextIndex);
+        }
+        return;
+      }
+
+      const typedCursor = Array.from(
+        normalizeTypedText(typedRef.current, activeTypingSystem),
+      ).length;
+      if (typedCursor >= activeParagraphCodePoints.length) return;
+
+      const normalizedCharacter = normalizeTypedText(
+        mappedCharacter,
+        activeTypingSystem,
+      );
+      const mappedCodePoints = Array.from(normalizedCharacter);
+      if (mappedCodePoints.length > activeParagraphCodePoints.length - typedCursor) {
+        return;
+      }
+      const expectedOutput = activeParagraphCodePoints
+        .slice(typedCursor, typedCursor + mappedCodePoints.length)
+        .join("");
       const nextActivity = {
         ...activityRef.current,
-        total: activityRef.current.total + 1,
+        total: activityRef.current.total + segmentText(normalizedCharacter).length,
       };
-      const expectedCharacter = activeParagraph[typedRef.current.length];
-      const isCorrect = event.key === expectedCharacter;
+      const isCorrect = normalizedCharacter === expectedOutput;
+      const outputUnits = segmentText(normalizedCharacter).length;
       if (!isCorrect) {
-        nextActivity.incorrect += 1;
+        nextActivity.incorrect += outputUnits;
       } else {
-        nextActivity.correct += 1;
+        nextActivity.correct += outputUnits;
       }
-      nextActivity.completedCharacters += 1;
+      const nextValue = `${typedRef.current}${normalizedCharacter}`;
+      const nextCursor = Array.from(
+        normalizeTypedText(nextValue, activeTypingSystem),
+      ).length;
+      nextActivity.completedCharacters =
+        activityRef.current.completedCharacters +
+        getCompletedGraphemes(activeParagraphUnits, nextCursor) -
+        getCompletedGraphemes(activeParagraphUnits, typedCursor);
       activityRef.current = nextActivity;
       setActivity(nextActivity);
       setFeedback({
         code: event.code,
         type: isCorrect ? "correct" : "incorrect",
       });
-      const nextValue = `${typedRef.current}${event.key}`;
       typedRef.current = nextValue;
       setTyped(nextValue);
-      setCursorIndex(nextValue.length);
-
-      if (nextValue.length === activeParagraph.length) {
-        const nextIndex = (paragraphIndex + 1) % chapter.paragraphs.length;
+      setCursorIndex(nextCursor);
+      if (nextCursor === activeParagraphCodePoints.length) {
+        const nextIndex = (paragraphIndex + 1) % practiceParagraphs.length;
         typedRef.current = "";
         setTyped("");
         setCursorIndex(0);
@@ -526,12 +680,24 @@ export function TypingPractice({ chapterId }) {
     window.addEventListener("keydown", handlePracticeKeyDown, true);
     return () =>
       window.removeEventListener("keydown", handlePracticeKeyDown, true);
-  }, [activeParagraph, chapter, finished, paragraphIndex, ready, startTimer]);
+  }, [
+    activeParagraph,
+    activeParagraphCodePoints,
+    activeParagraphUnits,
+    activeInputText,
+    activeTypingSystem,
+    chapter,
+    finished,
+    paragraphIndex,
+    practiceParagraphs,
+    testStarted,
+  ]);
 
-  function resetPractice() {
+  function resetAttemptState() {
     finishedRef.current = false;
     startedAtRef.current = 0;
     typedRef.current = "";
+    inputSequenceRef.current = "";
     activityRef.current = {
       correct: 0,
       incorrect: 0,
@@ -539,6 +705,7 @@ export function TypingPractice({ chapterId }) {
       completedCharacters: 0,
     };
     setTyped("");
+    setInputSequence("");
     setActivity({
       correct: 0,
       incorrect: 0,
@@ -546,7 +713,7 @@ export function TypingPractice({ chapterId }) {
       completedCharacters: 0,
     });
     setParagraphIndex(0);
-    setReady(true);
+    setTestStarted(false);
     setStartedAt(0);
     setElapsedMs(0);
     setRemainingMs(durationMs);
@@ -555,11 +722,43 @@ export function TypingPractice({ chapterId }) {
     setCursorIndex(0);
     setPressedCodes(new Set());
     setFeedback(null);
-    try {
-      window.sessionStorage.removeItem(timerKey);
-    } catch {
-      setStorageWarning(true);
+    setBranded(false);
+  }
+
+  function selectTypingSystem(nextSystemId) {
+    if (nextSystemId && !typingSystems[nextSystemId]) {
+      setSelectionError("The selected typing system is not available.");
+      return;
     }
+
+    resetAttemptState();
+    setLocalSelection({ id: nextSystemId || null });
+    const nextSystem = nextSystemId ? typingSystems[nextSystemId] : null;
+    setPendingLanguageId(nextSystem?.language || "");
+    setSelectionError("");
+    setStorageWriteFailed(!persistTypingSystem(nextSystemId));
+  }
+
+  function startPractice() {
+    if (!activeTypingSystem) {
+      setSelectionError("Select a supported typing system.");
+      return;
+    }
+    const validation = validateTypingSystem(activeTypingSystem.id, chapter);
+    if (!validation.valid) {
+      return;
+    }
+
+    resetAttemptState();
+    const started = Date.now();
+    startedAtRef.current = started;
+    setStartedAt(started);
+    setRemainingMs(durationMs);
+    setTestStarted(true);
+  }
+
+  function resetPractice() {
+    resetAttemptState();
   }
 
   if (!chapter) {
@@ -586,7 +785,7 @@ export function TypingPractice({ chapterId }) {
             <Trophy className="h-7 w-7" aria-hidden />
           </span>
           <Badge tone="success" className="mt-2">
-            10-minute practice complete
+            {durationMinutes}-minute practice complete
           </Badge>
           <h1 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">
             Time is up
@@ -653,8 +852,168 @@ export function TypingPractice({ chapterId }) {
     elapsedMs,
     activity,
   );
-  const expected = expectedCodes(activeParagraph[cursorIndex]);
+  const expectedText = activeParagraphCodePoints.slice(cursorIndex).join("");
+  const expected = activeTypingSystem
+    ? activeTypingSystem.inputMode === "custom-conversion"
+      ? getExpectedCodes(
+          activeInputText[inputSequence.length],
+          activeTypingSystem,
+        )
+      : getExpectedCodes(
+          activeTypingSystem.keyboardLayout?.keyInputMode === "browser-key"
+            ? activeParagraphCodePoints[cursorIndex]
+            : expectedText,
+          activeTypingSystem,
+        )
+    : [];
+  const activeValidation = activeTypingSystem
+    ? validateTypingSystem(activeTypingSystem.id, chapter)
+    : { valid: false, errors: ["Select a supported typing system."] };
   const remainingLabel = startedAt ? formatTime(remainingMs) : formatTime(durationMs);
+
+  if (!testStarted) {
+    return (
+      <section className="mx-auto flex h-full max-w-3xl flex-col justify-center">
+        <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm sm:p-7">
+          <Badge tone="sky">Typing setup</Badge>
+          <h1 className="mt-2 text-2xl font-bold text-slate-950">Configure your practice</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Chapter {chapter.chapterNumber}: {chapter.title}
+          </p>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <label className="text-xs font-bold text-slate-700">
+              Language
+              <select
+                value={setupLanguageId}
+                onChange={(event) => {
+                  const nextLanguage = event.target.value;
+                  if (!nextLanguage) {
+                    selectTypingSystem(null);
+                    return;
+                  }
+                  setPendingLanguageId(nextLanguage);
+                  const availableSystem = getTypingSystemsForLanguage(
+                    nextLanguage,
+                  ).find((system) => system.status === "ready");
+                  if (availableSystem) {
+                    selectTypingSystem(availableSystem.id);
+                  } else {
+                    selectTypingSystem(null);
+                    setPendingLanguageId(nextLanguage);
+                    setSelectionError(
+                      "No verified typing system is available for this language.",
+                    );
+                  }
+                }}
+                className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500"
+              >
+                <option value="">Choose a language</option>
+                {typingLanguages.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-xs font-bold text-slate-700">
+              Typing system and font
+              <select
+                value={activeTypingSystem?.id || ""}
+                onChange={(event) => selectTypingSystem(event.target.value)}
+                disabled={!setupLanguageId}
+                className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500"
+              >
+                <option value="">Choose a font and layout</option>
+                {setupSystems.map((system) => (
+                  <option
+                    key={system.id}
+                    value={system.id}
+                    disabled={system.status !== "ready"}
+                  >
+                    {system.font.name}
+                    {system.status !== "ready"
+                      ? ` (Unavailable: ${system.unavailableReason})`
+                      : ` · ${system.keyboardLayout.label}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-xs font-bold text-slate-700">
+              Typing Duration
+              <select
+                value={durationMinutes}
+                onChange={(event) => setDurationMinutes(Number(event.target.value))}
+                className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500"
+              >
+                {[1, 2, 5, 10, 15, 30].map((minutes) => (
+                  <option key={minutes} value={minutes}>{minutes} minute{minutes === 1 ? "" : "s"}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <span className="font-bold">Selection:</span>{" "}
+            {activeTypingSystem
+              ? `${activeTypingSystem.label} · ${selectedFont.name} · ${activeTypingSystem.keyboardLayout?.label || "Unverified keyboard"} · ${durationMinutes} minute${durationMinutes === 1 ? "" : "s"}`
+              : `Choose a language and verified typing system · ${durationMinutes} minute${durationMinutes === 1 ? "" : "s"}`}
+          </div>
+
+          {(selectionError ||
+            (savedSystemUnknown
+              ? "The saved typing system is no longer available."
+              : activeTypingSystem && !activeValidation.valid
+                ? activeValidation.errors.join(" ")
+                : "")) && (
+            <div
+              className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+              role="alert"
+            >
+              <p className="font-bold">Typing system cannot start</p>
+              <p className="mt-1 text-xs">
+                {selectionError ||
+                  (savedSystemUnknown
+                    ? "The saved typing system is no longer available."
+                    : activeValidation.errors.join("; "))}
+              </p>
+            </div>
+          )}
+
+          {activeTypingSystem && (
+            <dl className="mt-3 grid gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] text-slate-500 sm:grid-cols-2">
+              <div><dt className="inline font-bold">System ID: </dt><dd className="inline">{activeTypingSystem.id}</dd></div>
+              <div><dt className="inline font-bold">Keyboard: </dt><dd className="inline">{activeTypingSystem.keyboardLayout?.label || "Unverified"}</dd></div>
+              <div><dt className="inline font-bold">Mapping ID: </dt><dd className="inline">{activeTypingSystem.keyboardLayoutId}</dd></div>
+              <div><dt className="inline font-bold">Input mode: </dt><dd className="inline">{activeTypingSystem.inputMode || "Unavailable until verified"}</dd></div>
+              <div><dt className="inline font-bold">Output encoding: </dt><dd className="inline">{activeTypingSystem.outputEncoding || "Unavailable until verified"}</dd></div>
+              <div><dt className="inline font-bold">Paragraph source: </dt><dd className="inline">{activeTypingSystem.paragraphSource}</dd></div>
+            </dl>
+          )}
+
+          {storageWarning && (
+            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+              Browser session storage is unavailable; your system selection may not persist.
+            </p>
+          )}
+
+          <div className="mt-5 flex justify-end gap-2">
+            <Button href="/typing-tutor" variant="secondary">
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Back
+            </Button>
+            <Button
+              onClick={startPractice}
+              disabled={!activeValidation.valid}
+            >
+              <Keyboard className="h-4 w-4" aria-hidden />
+              Start Typing
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-[1600px] flex-col gap-2 lg:h-full lg:min-h-0 lg:gap-2">
@@ -670,9 +1029,20 @@ export function TypingPractice({ chapterId }) {
             <h1 className="truncate text-base font-bold leading-5 text-slate-950 sm:text-lg">
               {chapter.title}
             </h1>
+            <p className="text-[9px] text-slate-500">
+              {activeTypingSystem.label} · {selectedFont.name} ·{" "}
+              {activeTypingSystem.keyboardLayout.label}
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <button
+            type="button"
+            onClick={resetPractice}
+            className="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-sky-700"
+          >
+            Change system
+          </button>
           <Link
             href="/typing-tutor"
             className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-sky-700 sm:gap-2"
@@ -698,14 +1068,19 @@ export function TypingPractice({ chapterId }) {
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-2 sm:px-5">
             <div className="min-w-0">
               <h2 className="text-sm font-bold text-slate-900">
-                Paragraph {paragraphIndex + 1} of {chapter.paragraphs.length}
+                Paragraph {paragraphIndex + 1} of {practiceParagraphs.length}
               </h2>
               <p className="text-[10px] text-slate-500">
                 Type each highlighted character correctly to continue
               </p>
             </div>
             <span className="shrink-0 rounded-md bg-white px-2 py-1 text-xs font-semibold tabular-nums text-slate-600">
-              {typed.length} / {activeParagraph.length}
+            {activeTypingSystem.inputMode === "custom-conversion"
+              ? getCompletedGraphemes(activeParagraphUnits, cursorIndex)
+              : segmentText(
+                  normalizeTypedText(typed, activeTypingSystem),
+                ).length}{" "}
+            / {activeParagraphUnits.length}
             </span>
           </div>
           <div
@@ -713,22 +1088,32 @@ export function TypingPractice({ chapterId }) {
             aria-label="Paragraph to type"
             className="min-h-[150px] flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5"
           >
-            <p className="whitespace-pre-wrap break-words text-base leading-8 tracking-[0.025em] text-slate-700 sm:text-lg sm:leading-9">
-              {activeParagraph.split("").map((character, index) => {
-                const isTyped = index < typed.length;
-                const isCorrect = isTyped && typed[index] === character;
-                const isCurrent = cursorIndex === index && !finished;
+            <p
+              className="whitespace-pre-wrap break-words text-base leading-8 tracking-[0.025em] text-slate-700 sm:text-lg sm:leading-9"
+              style={{ fontFamily: selectedFont.family }}
+            >
+              {paragraphUnitsWithOffsets.map(({ character, start, end }, index) => {
+                const typedSlice = typedCodePoints.slice(start, Math.min(end, typedCodePoints.length)).join("");
+                const isTyped = typedCodePoints.length > start;
+                const isComplete = typedCodePoints.length >= end;
+                const isPrefixCorrect =
+                  character.startsWith(typedSlice) && isTyped;
+                const isCorrect = isComplete && typedSlice === character;
+                const isCurrent =
+                  cursorIndex >= start && cursorIndex < end && !finished;
                 return (
                   <span
                     key={index}
                     ref={isCurrent ? cursorRef : null}
                     className={`rounded-sm ${
-                      isCurrent
+                      isCurrent && (!isTyped || isPrefixCorrect)
                         ? "bg-sky-200 text-sky-950 ring-1 ring-sky-400"
-                        : isTyped
+                        : isTyped && !isPrefixCorrect
+                          ? "bg-red-100 text-red-700 underline decoration-red-400 decoration-2 underline-offset-2"
+                          : isTyped
                           ? isCorrect
                             ? "text-emerald-700"
-                            : "bg-red-100 text-red-700 underline decoration-red-400 decoration-2 underline-offset-2"
+                            : "text-slate-700"
                           : "text-slate-700"
                     }`}
                   >
@@ -744,7 +1129,7 @@ export function TypingPractice({ chapterId }) {
                 Your typing
               </label>
               <span className="text-[10px] text-slate-500">
-                Typing starts the 10-minute timer
+                Timer starts when you select Start Typing
               </span>
             </div>
             <textarea
@@ -756,11 +1141,18 @@ export function TypingPractice({ chapterId }) {
               placeholder="Begin typing the highlighted paragraph..."
               aria-describedby="typing-input-help"
               className="h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-base leading-7 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 sm:h-28"
+              style={{ fontFamily: selectedFont.family }}
             />
+            {activeTypingSystem.inputMode === "custom-conversion" &&
+              inputSequence && (
+                <p className="mt-1 text-[10px] text-slate-500">
+                  AnmolLipi input sequence: <code>{inputSequence}</code>
+                </p>
+              )}
             <p id="typing-input-help" className="mt-1 text-[10px] leading-4 text-slate-500">
               Incorrect keys are marked red and counted; typing continues.
-              {storageWarning && " Timer storage is temporarily unavailable."}
-              {sessionRestored && " The timer was restored; this paragraph restarted."}
+              {storageWarning &&
+                " Browser session storage is unavailable; your system selection may not persist."}
             </p>
           </div>
         </section>
@@ -812,9 +1204,24 @@ export function TypingPractice({ chapterId }) {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-[10px] text-slate-500 sm:inline">
-              Incorrect keys are highlighted in red
+              Shift is shown above keys; AltGr layers appear at the right
             </span>
-            {branded && <Badge tone="aqua" className="!px-1.5 !py-0 !text-[9px]">HD Web Studios</Badge>}
+            {branded && (
+              <a
+                href="https://hdwebstudios.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
+                aria-label="Visit HD Web Studios website"
+              >
+                <Badge
+                  tone="aqua"
+                  className="!px-1.5 !py-0 !text-[9px] transition-colors hover:bg-cyan-100"
+                >
+                  Harshdeep · HD Web Studios
+                </Badge>
+              </a>
+            )}
           </div>
         </div>
         <VirtualKeyboard
@@ -822,6 +1229,7 @@ export function TypingPractice({ chapterId }) {
           pressedCodes={pressedCodes}
           feedback={feedback}
           branded={branded}
+          rows={activeTypingSystem.keyboardLayout.rows}
         />
       </section>
     </div>

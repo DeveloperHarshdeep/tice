@@ -225,7 +225,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-[0_12px_40px_rgba(14,165,233,0.16)] ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student1.jpeg"
+                        src="/student-images/student1.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 45vw, 260px"
@@ -240,7 +240,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student2.jpeg"
+                        src="/student-images/student2.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 30vw, 170px"
@@ -255,7 +255,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student4.jpeg"
+                        src="/student-images/student4.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 30vw, 170px"
@@ -270,7 +270,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student5.jpeg"
+                        src="/student-images/student5.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 30vw, 170px"
@@ -285,7 +285,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student3.jpeg"
+                        src="/student-images/student3.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 30vw, 170px"
@@ -300,7 +300,7 @@ export default function HomePage() {
                   <div className="relative aspect-square rounded-full bg-white p-1.5 shadow-lg ring-1 ring-sky-100 sm:p-2">
                     <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-white">
                       <Image
-                        src="/student-images/student6.jpeg"
+                        src="/student-images/student6.webp"
                         alt="TICE student"
                         fill
                         sizes="(max-width: 640px) 30vw, 170px"

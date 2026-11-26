@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -114,11 +115,14 @@ export function Header() {
           className="flex items-center gap-3 font-semibold text-foreground group"
         >
           <span className="flex h-30 w-30 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-  <img
-    src="/tice_logo.png"
-    alt="TICE Logo"
-    className="h-full w-full object-contain"
-  />
+          <Image
+            src="/tice_logo.webp"
+            alt="TICE Logo"
+            width={694}
+            height={359}
+            sizes="120px"
+            className="h-full w-full object-contain"
+          />
 </span>
           <div className="flex flex-col">
             {/* <div className="flex items-center gap-1.5">

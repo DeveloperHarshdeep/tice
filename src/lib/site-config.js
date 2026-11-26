@@ -12,6 +12,11 @@ export const siteConfig = {
   tagline: "Practical computer education for today's digital workplace.",
   experienceYears: 20,
   instructor: "Mr. Sandeep Kumar",
+  developer: {
+    name: "Harshdeep · HD Web Studios",
+    phone: "7589434135",
+    website: "https://hdwebstudios.in",
+  },
   teacher: {
     name: "Mr. Sandeep Kumar",
     qualification: "B.Com",

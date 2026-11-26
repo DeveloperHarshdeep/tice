@@ -300,12 +300,22 @@ export function Footer() {
           <p className="text-xs text-slate-500">
             Designed and developed by{" "}
             <a
-              href="https://hdwebstudios.in"
+              href={siteConfig.developer.website}
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-sky-700 underline decoration-sky-200 underline-offset-4 transition-colors hover:text-sky-500"
             >
-              HD Web Studios
+              {siteConfig.developer.name}
+            </a>
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Developer contact:{" "}
+            <a
+              href={`tel:${siteConfig.developer.phone}`}
+              className="font-medium transition-colors hover:text-sky-600"
+              aria-label={`Call developer at ${siteConfig.developer.phone}`}
+            >
+              {siteConfig.developer.phone}
             </a>
           </p>
         </div>
